@@ -14,6 +14,8 @@ class TCagraHit : public TDetectorHit {
     //virtual void Draw(Option_t* opt = "");
 
     virtual Int_t Charge() const;
+    Float_t GetCharge() const;
+    void SetCharge(Float_t ch) { fCharge=ch; }
 
     int GetDetnum() const;
     char GetLeaf() const;
@@ -74,8 +76,10 @@ class TCagraHit : public TDetectorHit {
     void SetSampledBaseline(UShort_t base) { sampled_baseline = base; }
     const UShort_t& GetSampledBaseline() const { return sampled_baseline; }
     std::vector<Short_t>* GetTrace(int segnum=0);
+    std::vector<Short_t>* GetSanitizedTrace(int segnum=0);
     void SetTrace(std::vector<Short_t>& trace);
     void DrawTrace(int segnum, bool draw_baseline=false);
+    static void DrawTrace(const std::vector<double>& trace, const std::vector<double>& error);
     void DrawTraceBaseline(int segnum);
 
     void DrawTraceSamples(int segnum);
@@ -90,6 +94,8 @@ class TCagraHit : public TDetectorHit {
     void DrawBaselineExponential(int segnum=0);
 
   private:
+    Double_t charge;
+
     std::vector<Short_t> fTrace;
     std::vector<UShort_t> fMarks;
     std::vector<TCagraHit> fSegments;

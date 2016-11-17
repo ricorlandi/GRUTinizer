@@ -7,7 +7,8 @@
 #include <sstream>
 #include <string>
 #include <utility>
-
+#include <algorithm>
+#include <cassert>
 
 #include "TH1.h"
 #include "TH2.h"
@@ -106,6 +107,35 @@ std::pair<double,double> raytrace(double x, double a, double y) {
   return std::pair<double,double>(A,B);
 }
 
+double VectorAverage(const std::vector<short int>& vec) {
+  double sum = 0;
+  for (auto const& el : vec) {
+    sum += el;
+  }
+  return (float)sum/vec.size();
+}
+
+double VectorStdDev(const std::vector<short int>& vec) {
+  double avg = VectorAverage(vec);
+  double sum = 0;
+  for (auto const& el : vec) {
+    sum += std::pow((el-avg),2);
+  }
+  return sum/vec.size();
+}
+
+std::pair<double,double> VectorStats(const std::vector<short int>& vec) {
+  double avg = VectorAverage(vec);
+  double sum = 0;
+  for (auto const& el : vec) {
+    sum += std::pow((el-avg),2);
+  }
+  return std::pair<double,double>(avg,sqrt(sum/vec.size()));
+}
+
+
+
+
 // ----------------------------------------------------------------------
 // extern "C" is needed to prevent name mangling.
 // The function signature must be exactly as shown here,
@@ -135,74 +165,33 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
   auto boardid = core_hit.GetBoardID();
   auto chan = core_hit.GetChannel();
 
+  Double_t prerise = core_hit.GetPreRise()/TANLEvent::GetShapingTime();
 
-
+  prerise = core_hit.GetPreRise()/TANLEvent::GetShapingTime();
   stream.str("");
-  stream << "Ge_PZ_" << boardid << "_" << chan;
-  obj.FillHistogram(local_dirname, stream.str(),5000,0,10000,(-1)*core_hit.GetCorrectedEnergy(0));
+  stream << "Prerise[Q]_" << boardid << "_" << chan;
+  obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,core_hit.GetCharge(),1250,6000,8500,prerise);
+  stream.str("");
+  stream << "Prerise[E_pzcor_basesample]_" << boardid << "_" << chan;
+  obj.FillHistogram(local_dirname, stream.str(),3000,0,6000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()),1250,6000,8500,prerise);
+  // stream.str("");
+  // stream << "Prerise[E_pzcor_sampledbase]_" << boardid << "_" << chan;
+  // obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetSampledBaseline()),1000,0,0,prerise);
+  // stream.str("");
+  // stream << "Prerise[E_pzcor_tracebase]_" << boardid << "_" << chan;
+  // obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetTraceBaseline()),1000,0,0,prerise);
+
+  stream.str(""); stream << "E_pzcor_basesample" << boardid << "_" << chan;
+  obj.FillHistogram(local_dirname,stream.str(),2000,0,8000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
 
 
 
-  Double_t baseline = core_hit.GetPreRise()/TANLEvent::GetShapingTime();
-  baseline = core_hit.GetSampledBaseline();
-
-  //if ((boardid==114) || (boardid==116) ||  (boardid==117) || (boardid==118) || (boardid==119) || (boardid==120)) {
-  if (boardid==118 || boardid==119) {
-
-    stream.str("");
-    stream << "SampledBaseline[Q]_" << boardid << "_" << chan;
-    obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,(-1)*core_hit.Charge(),750,0,0,baseline);
-
-    stream.str("");
-    stream << "SampledBaseline[E_pzcor]_" << boardid << "_" << chan;
-    obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,(-1)*core_hit.GetCorrectedEnergy(baseline),750,0,0,baseline);
-  }
-
-    stream.str("");
-    stream << "Ge_PZ_SampledBL_" << boardid << "_" << chan;
-    obj.FillHistogram(local_dirname, stream.str(),5000,0,10000,(-1)*core_hit.GetCorrectedEnergy(baseline));
 
 
-
-    baseline = core_hit.GetBaseSample();
-
-    if (boardid==117 || boardid==118 || boardid==119) {
-    stream.str("");
-    stream << "BaseSample[Q]_" << boardid << "_" << chan;
-    obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,(-1)*core_hit.Charge(),750,7500,9000,baseline);
-
-    stream.str("");
-    stream << "BaseSample[E_pzcor]_" << boardid << "_" << chan;
-    obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,(-1)*core_hit.GetCorrectedEnergy(baseline),750,7500,9000,baseline);
-
-    }
-    stream.str("");
-    stream << "Ge_PZ_BaseSample_" << boardid << "_" << chan;
-    obj.FillHistogram(local_dirname, stream.str(),5000,0,10000,(-1)*core_hit.GetCorrectedEnergy(baseline));
-
-
-
-    baseline = core_hit.GetTraceBaseline();
-    if (boardid==118 || boardid==119) {
-    stream.str("");
-    stream << "TraceBL[Q]_" << boardid << "_" << chan;
-    obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,(-1)*core_hit.Charge(),750,7500,9000,baseline);
-
-    stream.str("");
-    stream << "TraceBL[E_pzcor]_" << boardid << "_" << chan;
-    obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,(-1)*core_hit.GetCorrectedEnergy(baseline),750,7500,9000,baseline);
-
-    }
-    stream.str("");
-    stream << "Ge_PZ_AsymBLTrace_" << boardid << "_" << chan;
-    obj.FillHistogram(local_dirname, stream.str(),5000,0,10000,(-1)*core_hit.GetCorrectedEnergy(baseline));
-
-    //std::cout << core_hit.GetBaseSample() << " " << core_hit.GetTraceBaseline() << std::endl;
 
 }
 
-
-void PileUp(TRuntimeObjects& obj, TCagraHit& core_hit) {
+void PileUp (TRuntimeObjects& obj, TCagraHit& core_hit) {
   dirname = "PileUp";
 
   auto flags = core_hit.GetFlags();
@@ -219,111 +208,129 @@ void PileUp(TRuntimeObjects& obj, TCagraHit& core_hit) {
 
 void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
-  bool pulser_event = false;
-
   for (auto& core_hit : cagra) {
 
-    if (core_hit.GetSystem() == 'P') {
-      pulser_event = true;
-    }
-
-  }
-
-  for (auto& core_hit : cagra) {
-
-    //TChannel::Get(core_hit.Address())->Print();
-    //std::cin.get();
-
-
-    PileUp(obj,core_hit);
+    //PileUp(obj,core_hit);
 
     auto boardid = core_hit.GetBoardID();
     auto chan = core_hit.GetChannel();
 
-    if (core_hit.GetSystem() == 'P') {
-      obj.FillHistogram("Pulser","Pulser",100,-10000,10000,core_hit.Charge());
-    }
 
-    // core_hit.DrawTrace(0);
-    // std::cin.get();
+    // central contact signals
+    //stream.str("");
+    name = "Ge_" + std::to_string(boardid) + "_" + std::to_string(chan);
+    //stream << "Ge_" << boardid << "_" << chan;
+    //obj.FillHistogram("CAGRA_Raw", stream.str(),2500,0,5000,core_hit.GetCharge());
+    obj.FillHistogram("CAGRA_Raw", name,2000,0,10000,core_hit.GetCharge());
 
-    stream.str("");
-    if ((boardid==114) || (boardid==116) ||  (boardid==117) || (boardid==118) || (boardid==119) || (boardid==120)) {
-      stream << "Ge_" << boardid << "_" << chan;
-      obj.FillHistogram("CAGRA_Raw", stream.str(),2500,0,5000,(-1)*core_hit.Charge());
-    } else {
-      stream << "Ge_" << boardid << "_" << chan;
-      obj.FillHistogram("CAGRA_Raw", stream.str(),2500,0,5000,core_hit.Charge());
-    }
-    if (pulser_event != true)
-    {
-      stream.str("");
-      stream << "Ge_antiP_" << boardid << "_" << chan;
-      obj.FillHistogram("CAGRA_Raw", stream.str(),2500,0,5000,core_hit.Charge());
-    }
-
+    // segment (side channel) signals
     for (auto& segment : core_hit) {
       stream.str("");
       stream << "Ge_" << boardid << "_" << segment.GetChannel();
-      obj.FillHistogram("CAGRA_Raw",stream.str(),2500,0,5000,segment.Charge());
+      obj.FillHistogram("CAGRA_Raw",stream.str(),2000,0,10000,segment.GetCharge());
     }
 
+    if (boardid==109 && chan==0) {
+      obj.FillHistogram("CAGRA_Calibrated","Ge_109_0_test",2000,0,10000,core_hit.GetCharge()*2.29+3.09);
+    }
+
+    // same but for calibrated energies
     stream.str("");
     stream << "Ge_" << boardid << "_" << chan;
-    obj.FillHistogram("CAGRA_Calibrated",stream.str(),2500,-5000,5000,core_hit.GetEnergy());
+    obj.FillHistogram("CAGRA_Calibrated",stream.str(),2000,0,10000,core_hit.GetEnergy());
     for (auto& segment : core_hit) {
       stream.str("");
       stream << "Ge_" << boardid << "_" << segment.GetChannel();
-      obj.FillHistogram("CAGRA_Calibrated",stream.str(),2500,-5000,5000,segment.GetEnergy());
+      obj.FillHistogram("CAGRA_Calibrated",stream.str(),2000,0,10000,segment.GetEnergy());
     }
 
 
     // new exponential base line correction
 
 
-    stream.str("");
-    stream << "Ge_FitExpBLCorr_" << boardid << "_" << chan;
+    // stream.str("");
+    // stream << "Ge_FitExpBLCorr_" << boardid << "_" << chan;
     // auto Eexpcorr = core_hit.GetBaselineExpCorrFast();
     // if (Eexpcorr) {
     //   obj.FillHistogram("CAGRA_Corrections", stream.str(),5000,0,10000,Eexpcorr);
     // }
 
-    auto trace = core_hit.GetTrace();
+    //////////////////
 
+    // //static int counter=0;
+    // static std::vector<std::vector<short int>> traces;
+    // auto trace = core_hit.GetSanitizedTrace();
+    // if(trace->size() > 50) {
+    //   //if (counter++%100==0) {
+    //     traces.push_back(*trace);
+    //     //}
+    // }
 
-    // static int counter=0;
-    // if (counter%999==0) {
-    //   if(trace->size() >10) {
+    // if (traces.size() >= 100) {
+    //   // do a transpose to convert to vector<short int> for each bin
+    //   std::vector<std::vector<short int>> bins(traces[0].size());
+    //   size_t prev_size = traces[0].size();
+    //   for (auto& atrace : traces) {
+    //     assert(atrace.size() == prev_size);
+    //     prev_size = atrace.size();
+    //     for (auto nbin = 0u; nbin<atrace.size(); nbin++) {
+    //       bins[nbin].push_back(atrace[nbin]);
+    //     }
+    //   }
+    //   // for each bin
+    //   // build avg histo with errors
+    //   std::vector<double> avgs, errors;
+    //   for (auto& bin : bins) {
+    //     double avg = 0, stddev = 0;
+    //     //std::cout << "Bin: " << std::endl;
+    //     // for (auto& el : bin) {
+    //     //   std::cout << "  " << el << std::endl;
+    //     // }
+    //     std::tie(avg, stddev) = VectorStats(bin);
+    //     // std::cout << "Average: " << avg << std::endl;
+    //     // std::cout << "StdDev: " << stddev << std::endl;
+    //     // std::cin.get();
+    //     avgs.push_back(avg);
+    //     errors.push_back(stddev);
+    //   }
+    //   TCagraHit::DrawTrace(avgs,errors);
+    //   //TCagraHit::DrawTrace(avgs,{});
+    //   std::cin.get();
+
+    //   traces.clear();
+    // }
+
+    // auto trace = core_hit.GetTrace();
+
+    // if (counter++%1000==0) {
+    //   if(trace->size() > 10) {
     //     core_hit.DrawTrace(0);
     //     std::cin.get();
     //   }
     // }
 
-    if(trace->size() > 20) {
-      size_t size = 20;
-      auto prerise = 0.0;
-      for (auto i=0u; i<size; i++) {
-        prerise+=(*trace)[i];
-      }
-      prerise /= size;
-      stream.str("");
-      stream << "Ge_TraceHeight_" << boardid << "_" << chan;
-      obj.FillHistogram("CAGRA_Raw", stream.str(),2500,0,5000,(-1)*core_hit.GetTraceHeight(size));
-      stream.str("");
-      stream << "Prerise[TraceHeight]" << boardid << "_" << chan;
-      obj.FillHistogram("CAGRA_Baseline", stream.str(),
-                        2500,-1000,4000,(-1)*core_hit.GetTraceHeight(size),
-                        2000,0,10000,prerise);
-    }
-
-
-    // skip polezero for LaBr3 system
-    PoleZeroHistos(obj,core_hit,"CAGRA_Corrections");
+    // if(trace->size() > 20) {
+    //   size_t size = 20;
+    //   auto prerise = 0.0;
+    //   for (auto i=0u; i<size; i++) {
+    //     prerise+=(*trace)[i];
+    //   }
+    //   prerise /= size;
+    //   stream.str("");
+    //   stream << "Ge_TraceHeight_" << boardid << "_" << chan;
+    //   obj.FillHistogram("CAGRA_Raw", stream.str(),2500,0,5000,core_hit.GetTraceHeight(size));
+    //   stream.str("");
+    //   stream << "Prerise[TraceHeight]" << boardid << "_" << chan;
+    //   obj.FillHistogram("CAGRA_Baseline", stream.str(),
+    //                     2500,-1000,4000,core_hit.GetTraceHeight(size),
+    //                     2000,0,10000,prerise);
+    // }
 
 
 
-    //core_hit.DrawTraceSamples(0);
-    //std::cin.get();
+    PoleZeroHistos(obj,core_hit,"PoleZero");
+
+
 
     static ULong_t first_ts = 0;
     if (first_ts <= 1e6){  first_ts = core_hit.Timestamp(); std::cout << first_ts << std::endl; }
@@ -333,13 +340,7 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
 
 
-    // Manual trace analysis
-    if (false && core_hit.GetDetnum() <= 104) {
-      //LaBr3 hit, do custom trace analysis
-      stream.str(""); stream << "LaBr3_traces_" << boardid << "_" << chan;
-      auto labr_E = core_hit.GetTraceEnergy(0,57);
-      obj.FillHistogram("CAGRA_Raw",stream.str(),10000,0,10000,labr_E);
-    }
+
 
   }
 
@@ -623,9 +624,9 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 
         stream.str("");
         stream << "Ge_"<< boardid << "_" << channel;
-	if ((boardid==114) || (boardid==116) ||  (boardid==117) || (boardid==118) || (boardid==119) ||(boardid==120)) {
-	  obj.FillHistogram("COIN_Raw",stream.str(),500,0,10000,(-1)*core_hit.Charge());
-        }
+        //if ((boardid==114) || (boardid==116) ||  (boardid==117) || (boardid==118) || (boardid==119) ||(boardid==120)) {
+          obj.FillHistogram("COIN_Raw",stream.str(),500,0,10000,core_hit.GetCharge());
+          //}
         stream.str("");
         stream << "Ge_" << boardid << "_" << channel;
         obj.FillHistogram("COIN_Calibrated",stream.str(),10000,0,10000,core_hit.GetEnergy());
@@ -638,17 +639,17 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 
         stream.str("");
         stream << "Ex_Ge_" << boardid << "_" << channel;
-        obj.FillHistogram("COIN_Calibrated",stream.str(),500,0,20,Ex,5000,0,10000,(-1)*core_hit.GetEnergy());
+        obj.FillHistogram("COIN_Calibrated",stream.str(),500,0,20,Ex,5000,0,10000,core_hit.GetEnergy());
 
-      if ((boardid==114) || (boardid==116) ||  (boardid==117) || (boardid==118) || (boardid==119) ||(boardid==120)) {
+        //if ((boardid==114) || (boardid==116) ||  (boardid==117) || (boardid==118) || (boardid==119) ||(boardid==120)) {
         stream << "Ge_PZ_AsymBL_" << boardid << "_" << channel;
-        obj.FillHistogram("COIN_Calibrated", stream.str().c_str(),5000,0,10000,(-1)*core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
+        obj.FillHistogram("COIN_Calibrated", stream.str().c_str(),5000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
 
         stream.str("");
         stream << "Ex_CAGRACorrected_" << boardid << "_" << channel;
-        obj.FillHistogram("COIN_Calibrated", stream.str().c_str(),500,0,20,Ex,10000,0,10000,(-1)*core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
+        obj.FillHistogram("COIN_Calibrated", stream.str().c_str(),500,0,20,Ex,10000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
 
-      }
+        //}
 
       }
 

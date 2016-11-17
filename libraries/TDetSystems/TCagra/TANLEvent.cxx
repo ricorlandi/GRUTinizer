@@ -7,7 +7,7 @@ ClassImp(TANLEvent)
 
 //bool TANLEvent::fExtractWaves = true;
 Float_t TANLEvent::shaping_time = std::sqrt(-1);
-Short_t TANLEvent::signal_polarity = std::sqrt(-1);
+Float_t TANLEvent::signal_polarity = std::sqrt(-1);
 
 TANLEvent::TANLEvent(TSmartBuffer& buf) : d_cfd(0.) {
 

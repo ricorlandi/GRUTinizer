@@ -24,7 +24,18 @@
 
 ClassImp(TCagraHit)
 
-TCagraHit::TCagraHit() : prerise_energy(0), postrise_energy(0), fit_params({}) {
+TCagraHit::TCagraHit() :  charge(0.0), prerise_energy(0), postrise_energy(0), fit_params({}) {
+  baseline_fitted=0;
+  time=0;
+  prev_time=0;
+  flags=0;
+  prerise_energy=0;
+  postrise_energy=0;
+  base_sample=0;
+  sampled_baseline=0;
+  prev_postrise_begin_sample=0;
+  prerise_begin=0;
+  prerise_end=0;
 }
 
 TCagraHit::~TCagraHit() {
@@ -168,6 +179,10 @@ Int_t TCagraHit::Charge() const {
   }
 }
 
+Float_t TCagraHit::GetCharge() const {
+  return fCharge;
+}
+
 
 Double_t TCagraHit::GetCorrectedEnergy(Double_t asym_bl) {
   TChannel* chan = TChannel::GetChannel(fAddress);
@@ -180,7 +195,7 @@ Double_t TCagraHit::GetCorrectedEnergy(Double_t asym_bl) {
       std::cout << "Supressing warning." <<std::endl;
     }
   } else {
-    auto pzE = chan->PoleZeroCorrection(prerise_energy,postrise_energy,TANLEvent::GetShapingTime());
+    auto pzE = chan->PoleZeroCorrection(prerise_energy,postrise_energy,TANLEvent::GetShapingTime(),TANLEvent::GetSignalPolarity());
     pzE = chan->BaselineCorrection(pzE,asym_bl);
     Energy = chan->CalEnergy(pzE, fTimestamp);
   }
@@ -557,6 +572,31 @@ void TCagraHit::DrawTrace(int segnum, bool draw_baseline) {
   }
 }
 
+void TCagraHit::DrawTrace(const std::vector<double>& trace, const std::vector<double>& error) {
+
+
+  Double_t time = 0.0;
+  TH1I hist("hist", "", trace.size(), 0, 10*trace.size());
+
+  hist.SetStats(false);
+
+  hist.GetXaxis()->SetTitle("Time (ns)");
+  hist.GetYaxis()->SetTitle("ADC units");
+
+  if (error.size()) {
+    for(size_t i=0; i<trace.size(); i++) {
+      hist.SetBinContent(i+1,trace[i]);
+      hist.SetBinError(i+1,error[i]);
+    }
+  } else {
+      for(size_t i=0; i<trace.size(); i++) {
+      hist.SetBinContent(i+1,trace[i]);
+    }
+  }
+
+  hist.DrawCopy();
+}
+
 void TCagraHit::DrawTraceSamples(int segnum) {
   std::vector<Short_t> trace(3);
   trace[0] = prev_postrise_begin_sample;
@@ -594,6 +634,29 @@ std::vector<Short_t>* TCagraHit::GetTrace(int segnum) {
   }
   return NULL;
 }
+
+std::vector<Short_t>* TCagraHit::GetSanitizedTrace(int segnum) {
+  if(segnum == 0){
+    for(size_t i=0; i<fTrace.size(); i++) {
+      auto adc = (fTrace[i] < 0) ? fTrace[i] + std::pow(2,14) : fTrace[i];
+      fTrace[i] = adc;
+    }
+    return &fTrace;
+  }
+  for(auto& seg : fSegments) {
+    if(seg.GetSegnum() == segnum) {
+
+      auto segtrace = seg.GetTrace();
+      for(size_t i=0; i<segtrace->size(); i++) {
+        auto adc = (((*segtrace)[i]) < 0) ? (*segtrace)[i] + std::pow(2,14) : (*segtrace)[i];
+        ((*segtrace)[i]) = adc;
+      }
+
+    }
+  }
+  return NULL;
+}
+
 
 double TCagraHit::GetTraceHeight(size_t size) const {
   if(fTrace.size() < 2*size){

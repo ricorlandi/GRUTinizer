@@ -376,7 +376,7 @@ void TChannel::SetPoleZeroCoeff(std::vector<double> coeff, double timestamp) {
   }
 }
 
-double TChannel::PoleZeroCorrection(const double& prerise, const double& postrise, const double& shaping_time, double timestamp) const {
+double TChannel::PoleZeroCorrection(const double& prerise, const double& postrise, const double& shaping_time, const double& polarity, double timestamp) const {
   auto pz = GetPoleZeroCoeff(timestamp);
   if (!pz.size()) {
     static UShort_t nprint = 0;
@@ -390,7 +390,7 @@ double TChannel::PoleZeroCorrection(const double& prerise, const double& postris
     }
     pz.push_back(1);
   }
-  return (postrise-prerise*pz[0])/shaping_time;
+  return (polarity > 0) ? (postrise-prerise*pz[0])/shaping_time : (prerise/pz[0] - postrise)/shaping_time;
 }
 
 const std::vector<double>& TChannel::GetBaselineCoeff(double timestamp) const {

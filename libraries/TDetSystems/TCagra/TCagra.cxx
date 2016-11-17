@@ -195,7 +195,7 @@ int TCagra::BuildHits(std::vector<TRawEvent>& raw_data){
       } else {
         // set clover charge from pre/post rise charges
         hit->SetTrace(anl.GetTrace());
-        hit->SetCharge(anl.GetEnergy());
+        hit->SetCharge(TANLEvent::GetSignalPolarity()*anl.GetEnergy());
       }
     } else {
       // no channel map for address exists

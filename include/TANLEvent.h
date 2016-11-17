@@ -35,7 +35,7 @@ class TANLEvent : public TObject {
         if (std::isnan(shaping_time)) { shaping_time = GValue::Value("ShapingTime"); }
         return shaping_time;
     }
-    static Short_t& GetSignalPolarity() {
+    static Float_t& GetSignalPolarity() {
         if (std::isnan(signal_polarity)) { signal_polarity = GValue::Value("SignalPolarity"); }
         return signal_polarity;
     }
@@ -69,7 +69,7 @@ class TANLEvent : public TObject {
 
   private:
     static Float_t shaping_time;
-    static Short_t signal_polarity;
+    static Float_t signal_polarity;
 
     UShort_t global_addr;
     UShort_t board_id;
