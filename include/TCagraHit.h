@@ -85,6 +85,7 @@ class TCagraHit : public TDetectorHit {
     void DrawTraceSamples(int segnum);
     double GetTraceHeight(size_t size=10) const;
     double GetTraceHeightDoppler(double beta,const TVector3& vec = TVector3(0,0,1)) const;
+    Double_t GetTraceHeightPZ(Double_t asym_bl=0, size_t size=10);
     Double_t GetTraceEnergy(const UShort_t& a,const UShort_t& b,UShort_t x = 0,UShort_t y=0) const;
     Double_t GetTraceBaseline();
     void SetTimingMarks(std::vector<UShort_t>& marks) { fMarks.swap(marks); }
@@ -92,6 +93,7 @@ class TCagraHit : public TDetectorHit {
     Double_t GetBaselineExpCorr(int segnum=0);
     Double_t GetBaselineExpCorrFast(int segnum=0);
     void DrawBaselineExponential(int segnum=0);
+
 
   private:
     Double_t charge;

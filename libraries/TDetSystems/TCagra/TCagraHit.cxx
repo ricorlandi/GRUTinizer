@@ -196,11 +196,45 @@ Double_t TCagraHit::GetCorrectedEnergy(Double_t asym_bl) {
     }
   } else {
     auto pzE = chan->PoleZeroCorrection(prerise_energy,postrise_energy,TANLEvent::GetShapingTime(),TANLEvent::GetSignalPolarity());
-    pzE = chan->BaselineCorrection(pzE,asym_bl);
+
+    pzE = (asym_bl) ? chan->BaselineCorrection(pzE,asym_bl) : chan->BaselineCorrection(pzE);
     Energy = chan->CalEnergy(pzE, fTimestamp);
   }
   return Energy;
 }
+
+Double_t TCagraHit::GetTraceHeightPZ(Double_t asym_bl, size_t size) {
+  if(fTrace.size() < 2*size){
+    return std::sqrt(-1);
+  }
+
+  TChannel* chan = TChannel::GetChannel(fAddress);
+  Double_t Energy = 0;
+  if(!chan){
+    static int count = 0;
+    if (count++ < 10) {
+      std::cout << std::hex << "Channel 0x" << fAddress << " not defined in calibrations file, no corrections are applied." << std::dec << std::endl;
+    } else if (count == 10) {
+      std::cout << "Supressing warning." <<std::endl;
+    }
+  } else {
+
+    double low = 0;
+    double high = 0;
+    GetSanitizedTrace();
+    for(unsigned int i=0; i<size; i++){
+      low += fTrace[i];
+      high += fTrace[fTrace.size()-i-1];
+    }
+
+    auto pzE = chan->PoleZeroCorrection(low,high,size,TANLEvent::GetSignalPolarity());
+
+    pzE = (asym_bl) ? chan->BaselineCorrection(pzE,asym_bl) : chan->BaselineCorrection(pzE);
+    Energy = chan->CalEnergy(pzE, fTimestamp);
+  }
+  return Energy;
+}
+
 Double_t TCagraHit:: GetTraceBaseline() {
   std::vector<Short_t>* trace = GetTrace();
   if (trace) {
@@ -651,7 +685,7 @@ std::vector<Short_t>* TCagraHit::GetSanitizedTrace(int segnum) {
         auto adc = (((*segtrace)[i]) < 0) ? (*segtrace)[i] + std::pow(2,14) : (*segtrace)[i];
         ((*segtrace)[i]) = adc;
       }
-
+      return segtrace;
     }
   }
   return NULL;
@@ -670,7 +704,7 @@ double TCagraHit::GetTraceHeight(size_t size) const {
     high += fTrace[fTrace.size()-i-1];
   }
 
-  return (high-low*0.93)/size;
+  return (high-low)/size;
 }
 
 double TCagraHit::GetTraceHeightDoppler(double beta,const TVector3& vec) const {

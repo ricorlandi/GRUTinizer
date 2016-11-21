@@ -160,7 +160,11 @@ void MakeHistograms(TRuntimeObjects& obj) {
 }
 // ----------------------------------------------------------------------
 
+void DrawAverageTrace(TCagraHit& core_hit);
+
 void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirname = "") {
+  auto flags = core_hit.GetFlags();
+  if (TANLEvent::PileUpFlag(flags) || TANLEvent::PileUpOnlyFlag(flags)) { return; }
 
   auto boardid = core_hit.GetBoardID();
   auto chan = core_hit.GetChannel();
@@ -168,25 +172,53 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
   Double_t prerise = core_hit.GetPreRise()/TANLEvent::GetShapingTime();
 
   prerise = core_hit.GetPreRise()/TANLEvent::GetShapingTime();
-  stream.str("");
-  stream << "Prerise[Q]_" << boardid << "_" << chan;
+  stream.str("");  stream << "Prerise[Q]_" << boardid << "_" << chan;
   obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,core_hit.GetCharge(),1250,6000,8500,prerise);
-  stream.str("");
-  stream << "Prerise[E_pzcor_basesample]_" << boardid << "_" << chan;
+  stream.str("");  stream << "Prerise[E_pzcor_basesample]_" << boardid << "_" << chan;
   obj.FillHistogram(local_dirname, stream.str(),3000,0,6000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()),1250,6000,8500,prerise);
-  // stream.str("");
-  // stream << "Prerise[E_pzcor_sampledbase]_" << boardid << "_" << chan;
-  // obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetSampledBaseline()),1000,0,0,prerise);
-  // stream.str("");
-  // stream << "Prerise[E_pzcor_tracebase]_" << boardid << "_" << chan;
-  // obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetTraceBaseline()),1000,0,0,prerise);
+  stream.str("");  stream << "Prerise[E_pzcor_constant]_" << boardid << "_" << chan;
+  obj.FillHistogram(local_dirname, stream.str(),3000,0,6000,core_hit.GetCorrectedEnergy(),1250,6000,8500,prerise);
 
   stream.str(""); stream << "E_pzcor_basesample" << boardid << "_" << chan;
-  obj.FillHistogram(local_dirname,stream.str(),2000,0,8000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
+  obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
+  stream.str(""); stream << "E_pzcor_constant" << boardid << "_" << chan;
+
+  auto pzchan = core_hit.GetCorrectedEnergy();
+  obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,pzchan);
+
+  stream.str(""); stream << "PZbaseline[PZconstant]" << boardid << "_" << chan;
+  obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,core_hit.GetCorrectedEnergy(),4000,0,8000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
 
 
 
+  auto trace = core_hit.GetTrace();
+  if(trace->size() > 10) {
+    stream.str(""); stream << "Etrace" << boardid << "_" << chan;
+    obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,core_hit.GetTraceHeight());
 
+    auto trace_E = core_hit.GetTraceHeightPZ();
+    stream.str(""); stream << "Etrace_pzcor_constant" << boardid << "_" << chan;
+    obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,trace_E);
+
+    stream.str(""); stream << "Etrace_sanitized" << boardid << "_" << chan;
+    obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,core_hit.GetTraceHeight());
+
+    //std::cout << trace_E << " " << pzchan << std::endl;
+  }
+
+
+  if (boardid == 109 && chan ==0 && pzchan > 2400 && pzchan < 2575) {
+
+    DrawAverageTrace(core_hit);
+
+    // auto trace = core_hit.GetTrace();
+    // if(trace->size() > 10) {
+    //   core_hit.DrawTrace(0);
+    //   std::cin.get();
+    // }
+
+
+  }
 
 
 }
@@ -255,59 +287,13 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
     //   obj.FillHistogram("CAGRA_Corrections", stream.str(),5000,0,10000,Eexpcorr);
     // }
 
-    //////////////////
 
-    // //static int counter=0;
-    // static std::vector<std::vector<short int>> traces;
-    // auto trace = core_hit.GetSanitizedTrace();
-    // if(trace->size() > 50) {
-    //   //if (counter++%100==0) {
-    //     traces.push_back(*trace);
-    //     //}
-    // }
 
-    // if (traces.size() >= 100) {
-    //   // do a transpose to convert to vector<short int> for each bin
-    //   std::vector<std::vector<short int>> bins(traces[0].size());
-    //   size_t prev_size = traces[0].size();
-    //   for (auto& atrace : traces) {
-    //     assert(atrace.size() == prev_size);
-    //     prev_size = atrace.size();
-    //     for (auto nbin = 0u; nbin<atrace.size(); nbin++) {
-    //       bins[nbin].push_back(atrace[nbin]);
-    //     }
-    //   }
-    //   // for each bin
-    //   // build avg histo with errors
-    //   std::vector<double> avgs, errors;
-    //   for (auto& bin : bins) {
-    //     double avg = 0, stddev = 0;
-    //     //std::cout << "Bin: " << std::endl;
-    //     // for (auto& el : bin) {
-    //     //   std::cout << "  " << el << std::endl;
-    //     // }
-    //     std::tie(avg, stddev) = VectorStats(bin);
-    //     // std::cout << "Average: " << avg << std::endl;
-    //     // std::cout << "StdDev: " << stddev << std::endl;
-    //     // std::cin.get();
-    //     avgs.push_back(avg);
-    //     errors.push_back(stddev);
-    //   }
-    //   TCagraHit::DrawTrace(avgs,errors);
-    //   //TCagraHit::DrawTrace(avgs,{});
-    //   std::cin.get();
 
-    //   traces.clear();
-    // }
 
-    // auto trace = core_hit.GetTrace();
 
-    // if (counter++%1000==0) {
-    //   if(trace->size() > 10) {
-    //     core_hit.DrawTrace(0);
-    //     std::cin.get();
-    //   }
-    // }
+
+
 
     // if(trace->size() > 20) {
     //   size_t size = 20;
@@ -666,4 +652,41 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 void LoadCuts() {
 
 
+}
+
+void DrawAverageTrace(TCagraHit& core_hit) {
+// Average trace analysis
+  //////////////////
+  static int counter=0;
+  static std::vector<std::vector<short int>> traces;
+  auto trace = core_hit.GetSanitizedTrace();
+  if(trace->size() > 50) {
+    traces.push_back(*trace);
+  }
+
+  if (traces.size() >= 100) {
+    // do a transpose to convert to vector<short int> for each bin
+    std::vector<std::vector<short int>> bins(traces[0].size());
+    size_t prev_size = traces[0].size();
+    for (auto& atrace : traces) {
+      assert(atrace.size() == prev_size);
+      prev_size = atrace.size();
+      for (auto nbin = 0u; nbin<atrace.size(); nbin++) {
+        bins[nbin].push_back(atrace[nbin]);
+      }
+    }
+    // for each bin
+    // build avg histo with errors
+    std::vector<double> avgs, errors;
+    for (auto& bin : bins) {
+      double avg = 0, stddev = 0;
+      std::tie(avg, stddev) = VectorStats(bin);
+      avgs.push_back(avg);
+      errors.push_back(stddev);
+    }
+    TCagraHit::DrawTrace(avgs,errors);
+    std::cin.get();
+
+    traces.clear();
+  }
 }
