@@ -181,8 +181,8 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
 
   stream.str(""); stream << "E_pzcor_basesample" << boardid << "_" << chan;
   obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
-  stream.str(""); stream << "E_pzcor_constant" << boardid << "_" << chan;
 
+  stream.str(""); stream << "E_pzcor_constant" << boardid << "_" << chan;
   auto pzchan = core_hit.GetCorrectedEnergy();
   obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,pzchan);
 
@@ -207,9 +207,9 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
   }
 
 
-  if (boardid == 109 && chan ==0 && pzchan > 2400 && pzchan < 2575) {
+  if (boardid == 119 && chan ==0 && pzchan > 980 && pzchan < 1040) {
 
-    DrawAverageTrace(core_hit);
+    //DrawAverageTrace(core_hit);
 
     // auto trace = core_hit.GetTrace();
     // if(trace->size() > 10) {
@@ -239,6 +239,19 @@ void PileUp (TRuntimeObjects& obj, TCagraHit& core_hit) {
 
 
 void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
+  //std::cout << cagra.size() << std::endl;
+  //if (cagra.size() > 11) { return; }
+
+  // static int multc = 0;
+  // static double average_mult = 0;
+  // average_mult += cagra.size();
+  // if (multc++ >= 1000) {
+  //   std::cout << "Average multiplicity: " << average_mult/1000 << std::endl;
+  //   average_mult = 0;
+  //   multc = 0;
+  // }
+
+
 
   for (auto& core_hit : cagra) {
 
@@ -312,9 +325,38 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
     //                     2000,0,10000,prerise);
     // }
 
+    //DrawAverageTrace(core_hit);\\\
+
 
 
     PoleZeroHistos(obj,core_hit,"PoleZero");
+
+
+    if (boardid==109 ) {
+      for (auto& hit2 : cagra) {
+        if (hit2.GetBoardID() != 109) {
+
+          stream.str(""); stream << "E1_E2_" << boardid;
+          auto e1 = core_hit.GetCorrectedEnergy();
+          auto e2 = hit2.GetCorrectedEnergy();
+          obj.FillHistogram(stream.str(),4000,0,8000,e1,4000,0,8000,e2);
+
+
+          //DrawAverageTrace(core_hit);
+          // auto trace = core_hit.GetTrace();
+          // if(trace->size() > 10) {
+          //   core_hit.DrawTrace(0);
+          //   std::cin.get();
+          // }
+
+
+
+
+        }
+      }
+    }
+
+
 
 
 

@@ -31,6 +31,7 @@ public:
   // Allows for looping over all hits with for(auto& hit : cagra) { }
   std::vector<TCagraHit>::iterator begin() { return cagra_hits.begin(); }
   std::vector<TCagraHit>::iterator end() { return cagra_hits.end(); }
+  size_t size() const { return cagra_hits.size(); }
 
 private:
   virtual int BuildHits(std::vector<TRawEvent>& raw_data);
