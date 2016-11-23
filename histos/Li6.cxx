@@ -647,6 +647,10 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
       stream << "TimeDiff_" << boardid << "_" << channel;
       obj.FillHistogram("COIN",stream.str().c_str(),1000,-500,1500,tdiff);
 
+
+      stream.str(""); stream << "Egam[tdiff]_" <<boardid << "_" << channel;
+      obj.FillHistogram(stream.str(),5000,0,10000,core_hit.GetCorrectedEnergy(),1000,-500,1500,tdiff);
+
       // gate on prompt peak from time diff of the timestamps of CAGRA & GR
       if ( (tdiff > 240) && (tdiff < 255) ){
 
