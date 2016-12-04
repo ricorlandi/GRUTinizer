@@ -37,6 +37,7 @@ class TCagraHit : public TDetectorHit {
             return -1;
         }
     }
+    void PrintChannel() const;
 
     TCagraHit& MakeSegmentByAddress(unsigned int address);
 
@@ -96,6 +97,8 @@ class TCagraHit : public TDetectorHit {
 
 
   private:
+    UShort_t segment;
+
     Double_t charge;
 
     std::vector<Short_t> fTrace;

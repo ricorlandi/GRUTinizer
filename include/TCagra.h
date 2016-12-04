@@ -27,7 +27,7 @@ public:
   const TCagraHit& GetCagraHit(int i) { return cagra_hits.at(i); }
   void PrintHit(int i){ cagra_hits.at(i).Print(); }
 
-  static TVector3 GetSegmentPosition(int detnum, char subpos, int segnum);
+  static TVector3 GetSegmentPosition(int slot, char core, int seg);
   // Allows for looping over all hits with for(auto& hit : cagra) { }
   std::vector<TCagraHit>::iterator begin() { return cagra_hits.begin(); }
   std::vector<TCagraHit>::iterator end() { return cagra_hits.end(); }

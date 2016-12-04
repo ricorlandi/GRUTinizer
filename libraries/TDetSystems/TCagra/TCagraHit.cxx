@@ -25,6 +25,7 @@
 ClassImp(TCagraHit)
 
 TCagraHit::TCagraHit() :  charge(0.0), prerise_energy(0), postrise_energy(0), fit_params({}) {
+  segment = 0;
   baseline_fitted=0;
   time=0;
   prev_time=0;
@@ -39,13 +40,16 @@ TCagraHit::TCagraHit() :  charge(0.0), prerise_energy(0), postrise_energy(0), fi
 }
 
 TCagraHit::~TCagraHit() {
-
 }
 void TCagraHit::Copy(TObject& obj) const {
   TDetectorHit::Copy(obj);
 }
 void TCagraHit::Print(Option_t *opt) const {
 }
+void TCagraHit::PrintChannel() const {
+  TChannel::GetChannel(fAddress)->Print();
+}
+
 void TCagraHit::Clear(Option_t *opt) {
   TDetectorHit::Clear(opt);
   fTrace.clear();
@@ -150,7 +154,80 @@ int TCagraHit::GetMainSegnum() const {
 }
 
 TVector3 TCagraHit::GetPosition(bool apply_array_offset) const {
-  TVector3 array_pos = TCagra::GetSegmentPosition(GetDetnum(), GetLeaf(), GetMainSegnum());
+  TChannel* chan = TChannel::GetChannel(fAddress);
+  auto clover_type = *chan->GetSystem();
+  UShort_t slot = chan->GetArrayPosition(); // slot number
+  char core = *chan->GetArraySubposition(); // leaf number
+  UShort_t seg = 0;
+  // seg = 0 gives the position of crystal center
+  // seg = 1 gives the more backward segment
+  // seg = 2 gives the more forward segment
+
+  if (chan->GetName()[0] == 'B') { return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1)); }
+  else if (clover_type == 'Y') {
+
+    TCagraHit const* seg_hit = nullptr;
+
+    size_t num_hits = GetNumSegments();
+    switch(num_hits) {
+    case 0:
+      seg = 0;
+      break;
+    case 1:
+      seg_hit = &fSegments[0];
+      break;
+    case 2:
+      seg_hit =
+        (fSegments[0].GetEnergy() > fSegments[1].GetEnergy()) ?
+        &fSegments[0] : &fSegments[1];
+      break;
+    case 3:
+    default:
+      std::cout << "Slot: " << slot << " Core: " << core << " NumHits: " << num_hits << std::endl;
+      std::cout << "Segment hits: \n";
+      for (auto i=0u; i<fSegments.size(); i++) {
+        std::cout << fSegments[i].GetDetnum() << " " << fSegments[i].GetLeaf() <<
+          " Timestamp: " << fSegments[i].Timestamp() << " Energy: " << fSegments[i].GetEnergy() << std::endl;
+      }
+      throw std::runtime_error("More than two segment hits in a single Yale crystal.");
+      break;
+    }
+
+    if (seg_hit) {
+      char leaf = seg_hit->GetLeaf();
+
+      // southern hemisphere
+      if (slot <=8 && slot >=5) {
+        if (core == 'A' || core == 'D') {
+          assert(leaf != 'R'); // comment this after checking
+          seg = (leaf == 'L') ? 1 : 2;
+        }
+        else if (core == 'B' || core == 'C') {
+          assert(leaf != 'L');
+          seg = (leaf == 'M') ? 1 : 2;
+        }
+      }
+      // northern hemisphere
+      else {
+        if (core == 'A' || core == 'D') {
+          assert(leaf != 'R'); // comment this after checking
+          seg = (leaf == 'L') ? 2 : 1;
+        }
+        else if (core == 'B' || core == 'C') {
+          assert(leaf != 'L');
+          seg = (leaf == 'M') ? 2 : 1;
+        }
+      }
+    }
+
+  } else if (clover_type == 'I') {
+    seg = chan->GetSegment();
+  } else {
+    std::cout << "Segments from unexpected clover type: " << clover_type << std::endl;
+    throw std::runtime_error("Segments from unexpected detector system.");
+  }
+
+  TVector3 array_pos = TCagra::GetSegmentPosition(slot, core, seg);
   if(apply_array_offset){
     array_pos += TVector3(GValue::Value("Cagra_X_offset"),
                           GValue::Value("Cagra_Y_offset"),
@@ -160,9 +237,6 @@ TVector3 TCagraHit::GetPosition(bool apply_array_offset) const {
 }
 
 double TCagraHit::GetDoppler(double beta,const TVector3& particle_vec, const TVector3& offset) const {
-  if(GetNumSegments()<1) {
-    return std::sqrt(-1);
-  }
 
   double gamma = 1/(sqrt(1-pow(beta,2)));
   TVector3 pos = GetPosition() + offset;
