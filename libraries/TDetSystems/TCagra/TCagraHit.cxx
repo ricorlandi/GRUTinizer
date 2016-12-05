@@ -270,9 +270,9 @@ Double_t TCagraHit::GetCorrectedEnergy(Double_t asym_bl) {
     }
   } else {
     int polarity = TANLEvent::GetSignalPolarity();
-    if (is_segment) {
-      polarity *= -1;
-    }
+    // if (is_segment) {
+    //   polarity *= -1;
+    // }
 
     auto pzE = chan->PoleZeroCorrection(prerise_energy,postrise_energy,TANLEvent::GetShapingTime(),polarity);
     pzE = chan->BaselineCorrection(pzE,asym_bl,polarity);
