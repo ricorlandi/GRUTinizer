@@ -201,6 +201,7 @@ int TCagra::BuildHits(std::vector<TRawEvent>& raw_data){
       } else {
         seg_hits[detnum].emplace_back();
         hit = &seg_hits[detnum].back();
+        hit->MarkAsSegmentHit();
       }
 
       if (*chan->GetSystem() == 'L') {
@@ -208,9 +209,15 @@ int TCagra::BuildHits(std::vector<TRawEvent>& raw_data){
         hit->SetTrace(anl.GetTrace());
         hit->SetCharge(hit->GetTraceEnergy(0,57));
       } else {
-        // set clover charge from pre/post rise charges
         hit->SetTrace(anl.GetTrace());
-        hit->SetCharge(TANLEvent::GetSignalPolarity()*anl.GetEnergy());
+        // set clover charge from pre/post rise charges
+        // both segments and central contacts will have the same energy range
+        // either both (+) or both (-)
+        if (segnum) {
+          hit->SetCharge(-1*TANLEvent::GetSignalPolarity()*anl.GetEnergy());
+        } else {
+          hit->SetCharge(TANLEvent::GetSignalPolarity()*anl.GetEnergy());
+        }
       }
     } else {
       // no channel map for address exists

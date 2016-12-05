@@ -390,7 +390,8 @@ double TChannel::PoleZeroCorrection(const double& prerise, const double& postris
     }
     pz.push_back(1);
   }
-  return (polarity > 0) ? (postrise-prerise*pz[0])/shaping_time : (prerise/pz[0] - postrise)/shaping_time;
+  //return (polarity > 0) ? (postrise-prerise*pz[0])/shaping_time : (prerise/pz[0] - postrise)/shaping_time;
+  return polarity*(postrise-prerise*pz[0])/shaping_time;
 }
 
 const std::vector<double>& TChannel::GetBaselineCoeff(double timestamp) const {
@@ -424,14 +425,15 @@ void TChannel::SetBaselineCoeff(std::vector<double> coeff, double timestamp) {
   }
 }
 
-double TChannel::BaselineCorrection(const double& charge, double asym_bl, double timestamp) const {
+double TChannel::BaselineCorrection(const double& charge, double asym_bl, const double& polarity, double timestamp) const {
   auto pz = GetPoleZeroCoeff(timestamp);
   if (!asym_bl) {
     auto bl = GetBaselineCoeff(timestamp);
     asym_bl = (bl.size()) ? bl[0] : 0;
   }
   if (!pz.size()) { pz.push_back(1); }
-  return charge - asym_bl*(1. - pz[0]);
+
+  return (pz[0] < 1) ? charge + asym_bl*(1. - pz[0]) : charge - asym_bl*(1. - pz[0]);
 }
 
 const std::vector<double>& TChannel::GetTimeCoeff(double timestamp) const {

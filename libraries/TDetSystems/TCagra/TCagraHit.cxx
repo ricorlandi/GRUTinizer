@@ -25,7 +25,7 @@
 ClassImp(TCagraHit)
 
 TCagraHit::TCagraHit() :  charge(0.0), prerise_energy(0), postrise_energy(0), fit_params({}) {
-  segment = 0;
+  is_segment = false;
   baseline_fitted=0;
   time=0;
   prev_time=0;
@@ -269,9 +269,13 @@ Double_t TCagraHit::GetCorrectedEnergy(Double_t asym_bl) {
       std::cout << "Supressing warning." <<std::endl;
     }
   } else {
-    auto pzE = chan->PoleZeroCorrection(prerise_energy,postrise_energy,TANLEvent::GetShapingTime(),TANLEvent::GetSignalPolarity());
+    int polarity = TANLEvent::GetSignalPolarity();
+    if (is_segment) {
+      polarity *= -1;
+    }
 
-    pzE = (asym_bl) ? chan->BaselineCorrection(pzE,asym_bl) : chan->BaselineCorrection(pzE);
+    auto pzE = chan->PoleZeroCorrection(prerise_energy,postrise_energy,TANLEvent::GetShapingTime(),polarity);
+    pzE = chan->BaselineCorrection(pzE,asym_bl,polarity);
     Energy = chan->CalEnergy(pzE, fTimestamp);
   }
   return Energy;

@@ -74,7 +74,7 @@ public:
   void SetBaselineCoeff(std::vector<double> coeff, double timestamp=-DBL_MAX);
   const std::vector<double>& GetBaselineCoeff(double timestamp=-DBL_MAX) const;
   void ClearBaselineCoeff();
-  double BaselineCorrection(const double& charge, double asym_bl=0, double timestamp=-DBL_MAX) const;
+  double BaselineCorrection(const double& charge, double asym_bl=0, const double& polarity=1, double timestamp=-DBL_MAX) const;
 
 
   void SetTimeCoeff(std::vector<double> tmp, double timestamp=-DBL_MAX);

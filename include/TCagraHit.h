@@ -94,10 +94,11 @@ class TCagraHit : public TDetectorHit {
     Double_t GetBaselineExpCorr(int segnum=0);
     Double_t GetBaselineExpCorrFast(int segnum=0);
     void DrawBaselineExponential(int segnum=0);
-
+    inline void MarkAsSegmentHit() { is_segment = true; }
+    bool IsSegment() { return is_segment; }
 
   private:
-    UShort_t segment;
+    bool is_segment;
 
     Double_t charge;
 
