@@ -68,12 +68,13 @@ public:
   void SetPoleZeroCoeff(std::vector<double> coeff, double timestamp=-DBL_MAX);
   const std::vector<double>& GetPoleZeroCoeff(double timestamp=-DBL_MAX) const;
   void ClearPoleZeroCoeff();
-  double PoleZeroCorrection(const double& prerise, const double& postrise, const double& shaping_time, double timestamp=-DBL_MAX) const;
+  double PoleZeroCorrection(const double& prerise, const double& postrise, const double& shaping_time,
+                            const double& polarity=1, double timestamp=-DBL_MAX) const;
 
   void SetBaselineCoeff(std::vector<double> coeff, double timestamp=-DBL_MAX);
   const std::vector<double>& GetBaselineCoeff(double timestamp=-DBL_MAX) const;
   void ClearBaselineCoeff();
-  double BaselineCorrection(const double& charge, double asym_bl=0, double timestamp=-DBL_MAX) const;
+  double BaselineCorrection(const double& charge, double asym_bl=0, const double& polarity=1, double timestamp=-DBL_MAX) const;
 
 
   void SetTimeCoeff(std::vector<double> tmp, double timestamp=-DBL_MAX);

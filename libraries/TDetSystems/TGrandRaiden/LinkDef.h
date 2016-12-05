@@ -11,4 +11,7 @@
 #pragma link C++ class std::vector<TGrandRaidenHit>+;
 #pragma link C++ class TGrandRaiden+;
 
+#pragma link C++ struct LaBrHit+;
+#pragma link C++ class std::vector<LaBrHit>+;
+
 #endif

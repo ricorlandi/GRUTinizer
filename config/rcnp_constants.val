@@ -1,3 +1,27 @@
+SignalPolarity {
+  Value: -1
+}
+
 ShapingTime {
   Value: 350.0
+}
+
+d_window {
+  Value: 0.06
+}
+
+d2_window {
+  Value: 0.00
+}
+
+k_window {
+  Value: 0.2
+}
+
+k0_window {
+  Value: 0.8
+}
+
+d3_window {
+  Value: 0.2
 }
