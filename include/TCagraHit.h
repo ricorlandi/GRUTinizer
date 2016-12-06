@@ -3,6 +3,8 @@
 
 #include "TDetectorHit.h"
 
+enum pos { seg_only, core_only, both };
+
 class TCagraHit : public TDetectorHit {
   public:
     TCagraHit();
@@ -44,9 +46,9 @@ class TCagraHit : public TDetectorHit {
     int GetBoardID() const;
     int GetChannel() const;
 
-    TVector3 GetPosition(bool apply_array_offset = false) const; // modified from true
+    TVector3 GetPosition(pos opt = pos::both, bool apply_array_offset = false) const;
 
-    double GetDoppler(double beta,
+    double GetDoppler(double beta, pos opt = pos::both,
                       const TVector3& particle_vec = TVector3(0,0,1),
                       const TVector3& cagra_offset = TVector3(0,0,0)) const;
 

@@ -153,7 +153,7 @@ int TCagraHit::GetMainSegnum() const {
   return output;
 }
 
-TVector3 TCagraHit::GetPosition(bool apply_array_offset) const {
+TVector3 TCagraHit::GetPosition(pos opt, bool apply_array_offset) const {
   TChannel* chan = TChannel::GetChannel(fAddress);
   auto clover_type = *chan->GetSystem();
   UShort_t slot = chan->GetArrayPosition(); // slot number
@@ -163,68 +163,76 @@ TVector3 TCagraHit::GetPosition(bool apply_array_offset) const {
   // seg = 1 gives the more backward segment
   // seg = 2 gives the more forward segment
 
-  if (chan->GetName()[0] == 'B') { return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1)); }
-  else if (clover_type == 'Y') {
+  if (opt == pos::both || opt == pos::seg_only) {
 
-    TCagraHit const* seg_hit = nullptr;
+    if (chan->GetName()[0] == 'B') { return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1)); }
+    else if (clover_type == 'Y') {
 
-    size_t num_hits = GetNumSegments();
-    switch(num_hits) {
-    case 0:
-      seg = 0;
-      break;
-    case 1:
-      seg_hit = &fSegments[0];
-      break;
-    case 2:
-      seg_hit =
-        (fSegments[0].GetEnergy() > fSegments[1].GetEnergy()) ?
-        &fSegments[0] : &fSegments[1];
-      break;
-    case 3:
-    default:
-      std::cout << "Slot: " << slot << " Core: " << core << " NumHits: " << num_hits << std::endl;
-      std::cout << "Segment hits: \n";
-      for (auto i=0u; i<fSegments.size(); i++) {
-        std::cout << fSegments[i].GetDetnum() << " " << fSegments[i].GetLeaf() <<
-          " Timestamp: " << fSegments[i].Timestamp() << " Energy: " << fSegments[i].GetEnergy() << std::endl;
+      TCagraHit const* seg_hit = nullptr;
+
+      size_t num_hits = GetNumSegments();
+      switch(num_hits) {
+      case 0:
+        seg = 0;
+        break;
+      case 1:
+        seg_hit = &fSegments[0];
+        break;
+      case 2:
+        seg_hit =
+          (fSegments[0].GetEnergy() > fSegments[1].GetEnergy()) ?
+          &fSegments[0] : &fSegments[1];
+        break;
+      case 3:
+      default:
+        std::cout << "Slot: " << slot << " Core: " << core << " NumHits: " << num_hits << std::endl;
+        std::cout << "Segment hits: \n";
+        for (auto i=0u; i<fSegments.size(); i++) {
+          std::cout << fSegments[i].GetDetnum() << " " << fSegments[i].GetLeaf() <<
+            " Timestamp: " << fSegments[i].Timestamp() << " Energy: " << fSegments[i].GetEnergy() << std::endl;
+        }
+        throw std::runtime_error("More than two segment hits in a single Yale crystal.");
+        break;
       }
-      throw std::runtime_error("More than two segment hits in a single Yale crystal.");
-      break;
+
+      if (seg_hit) {
+        char leaf = seg_hit->GetLeaf();
+
+        // southern hemisphere
+        if (slot <=8 && slot >=5) {
+          if (core == 'A' || core == 'D') {
+            assert(leaf != 'R'); // comment this after checking
+            seg = (leaf == 'L') ? 1 : 2;
+          }
+          else if (core == 'B' || core == 'C') {
+            assert(leaf != 'L');
+            seg = (leaf == 'M') ? 1 : 2;
+          }
+        }
+        // northern hemisphere
+        else {
+          if (core == 'A' || core == 'D') {
+            assert(leaf != 'R'); // comment this after checking
+            seg = (leaf == 'L') ? 2 : 1;
+          }
+          else if (core == 'B' || core == 'C') {
+            assert(leaf != 'L');
+            seg = (leaf == 'M') ? 2 : 1;
+          }
+        }
+      }
+
+    } else if (clover_type == 'I') {
+      seg = chan->GetSegment();
+    } else {
+      std::cout << "Segments from unexpected clover type: " << clover_type << std::endl;
+      throw std::runtime_error("Segments from unexpected detector system.");
     }
 
-    if (seg_hit) {
-      char leaf = seg_hit->GetLeaf();
+  } // end if pos is seg or both
 
-      // southern hemisphere
-      if (slot <=8 && slot >=5) {
-        if (core == 'A' || core == 'D') {
-          assert(leaf != 'R'); // comment this after checking
-          seg = (leaf == 'L') ? 1 : 2;
-        }
-        else if (core == 'B' || core == 'C') {
-          assert(leaf != 'L');
-          seg = (leaf == 'M') ? 1 : 2;
-        }
-      }
-      // northern hemisphere
-      else {
-        if (core == 'A' || core == 'D') {
-          assert(leaf != 'R'); // comment this after checking
-          seg = (leaf == 'L') ? 2 : 1;
-        }
-        else if (core == 'B' || core == 'C') {
-          assert(leaf != 'L');
-          seg = (leaf == 'M') ? 2 : 1;
-        }
-      }
-    }
-
-  } else if (clover_type == 'I') {
-    seg = chan->GetSegment();
-  } else {
-    std::cout << "Segments from unexpected clover type: " << clover_type << std::endl;
-    throw std::runtime_error("Segments from unexpected detector system.");
+  if (opt == pos::seg_only && seg == 0) {
+    return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1));
   }
 
   TVector3 array_pos = TCagra::GetSegmentPosition(slot, core, seg);
@@ -236,10 +244,10 @@ TVector3 TCagraHit::GetPosition(bool apply_array_offset) const {
   return array_pos;
 }
 
-double TCagraHit::GetDoppler(double beta,const TVector3& particle_vec, const TVector3& offset) const {
+double TCagraHit::GetDoppler(double beta, pos opt = pos::both, const TVector3& particle_vec, const TVector3& offset) const {
 
   double gamma = 1/(sqrt(1-pow(beta,2)));
-  TVector3 pos = GetPosition() + offset;
+  TVector3 pos = GetPosition(opt) + offset;
   double cos_angle = TMath::Cos(pos.Angle(particle_vec));
   double dc_en = GetEnergy()*gamma *(1 - beta*cos_angle);
   return dc_en;
