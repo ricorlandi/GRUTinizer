@@ -67,20 +67,6 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
     obj.FillHistogram(local_dirname,stream.str(),4000,0,0,seg_hit.GetCorrectedEnergy());
   }
 
-  // auto trace = core_hit.GetTrace();
-  // if(trace->size() > 10) {
-  //   stream.str(""); stream << "Etrace" << detector << "_" << chan;
-  //   obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,core_hit.GetTraceHeight());
-
-  //   auto trace_E = core_hit.GetTraceHeightPZ();
-  //   stream.str(""); stream << "Etrace_pzcor_constant" << detector << "_" << chan;
-  //   obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,trace_E);
-
-  //   stream.str(""); stream << "Etrace_sanitized" << detector << "_" << chan;
-  //   obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,core_hit.GetTraceHeight());
-
-  // }
-
 }
 
 void PileUp (TRuntimeObjects& obj, TCagraHit& core_hit) {
@@ -99,19 +85,6 @@ void PileUp (TRuntimeObjects& obj, TCagraHit& core_hit) {
 
 
 void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
-  //std::cout << cagra.size() << std::endl;
-  //if (cagra.size() > 11) { return; }
-
-  // static int multc = 0;
-  // static double average_mult = 0;
-  // average_mult += cagra.size();
-  // if (multc++ >= 1000) {
-  //   std::cout << "Average multiplicity: " << average_mult/1000 << std::endl;
-  //   average_mult = 0;
-  //   multc = 0;
-  // }
-
-
 
   for (auto& core_hit : cagra) {
 
@@ -122,10 +95,7 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
 
     // central contact signals
-    //stream.str("");
     name = "Det_" + std::to_string(detector) + "_" + std::to_string(chan);
-    //stream << "Det_" << detector << "_" << chan;
-    //obj.FillHistogram("CAGRA_Raw", stream.str(),2500,0,5000,core_hit.GetCharge());
     obj.FillHistogram("CAGRA_Raw", name,2000,0,0,core_hit.GetCharge());
 
     // segment (side channel) signals
@@ -171,7 +141,6 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
 
     // add myself for LaBr test energy
-
     double Egamma=0;
     for (auto const& labr_hit : hit.GetLaBr()) {
       int channum = labr_hit.channel;
@@ -207,7 +176,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
     // DE1[RF], DE2[RF], DE1[DE2]
 
     obj.FillHistogram("GR","RayID",64,-16,48, rcnp.GR_RAYID(0));
-    if (rcnp.GR_RAYID(0) == 0) { // if track reconstruction successfull
+    if (rcnp.GR_RAYID(0) == 0) { // if track reconstruction successful
       obj.FillHistogram("GR","X",1200,-600,600, rcnp.GR_X(0));
       obj.FillHistogram("GR","X_cal",1000,0,20, rcnp.GR_X(0)*0.01074+6.872);
       obj.FillHistogram("GR","Y",200,-100,100, rcnp.GR_Y(0));
@@ -254,67 +223,6 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       obj.FillHistogram(dirname,"dE2[A]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE2());
 
 
-
-
-
-
-      static std::vector<double> xcuts = { -450, 50, 300 };
-      // if (xcuts.size()==0) {
-      //   double start = -600;
-      //   while (true) {
-      //     xcuts.push_back(start);
-      //     start += 100;
-      //     if (start==600) { break; }
-      //   }
-      // }
-
-      static std::vector<std::vector<std::pair<double,double>>> acuts = { {{-0.069,-0.044},{-0.044,-0.024},{-0.024,-0.003},{-0.001,0.019},{0.02,0.04}  }, { }, { } };
-      static std::vector<std::vector<double>> acentroid = {{-0.054,-0.034, -0.1315, 0.00876, 0.0283},{-0.02858,-0.008848,0.01126,0.03202,0.05137},{-0.014,0.00498,0.026,0.0452,0.064}};
-      auto x = rcnp.GR_X(0);
-      double xwidth = 75;
-      auto afp = rcnp.GR_TH(0);
-      auto i=0u;
-      for (auto& cut : xcuts) {
-        if (x < cut+xwidth && x >= cut) {
-          stream.str(""); stream << "_x[" << cut << "," << cut+xwidth << ")";
-          obj.FillHistogram(dirname,"Y[A]"+stream.str(),300,-0.15,0.15,rcnp.GR_TH(0),200,-100,100,rcnp.GR_Y(0));
-
-          auto& local_acuts = acuts[i];
-          for (auto& acut : local_acuts) {
-            if (afp < acut.second && afp >= acut.first) {
-              stringstream stream2; stream2.str("");
-              stream2 << "_a[" << acut.first << "," << acut.second << ")";
-              obj.FillHistogram(dirname,"Y"+stream.str()+stream2.str(),200,-100,100, rcnp.GR_Y(0));
-            }
-          }
-
-
-        }
-        i++;
-      }
-
-
-
-      // a corrected for x position
-
-      //auto acor = - ((3.41887e-05)*x  +  (4.82521e-08)*x*x);
-      auto acor = -5.0043e-05*x;
-
-      afp += acor;
-      obj.FillHistogram(dirname,"A[X]corr",1200,-600,600,rcnp.GR_X(0),1000,-1,1,afp);
-
-
-
-      dirname = "Target";
-      auto ata = 316.129258*afp + -2.443; // mrad
-      ata = ata/1000*180/TMath::Pi();
-      obj.FillHistogram(dirname,"A[xfp]",1200,-600,600,rcnp.GR_X(0),1000,-1.5,1.5,ata);
-      obj.FillHistogram(dirname,"A",1000,-1.5,1.5,ata);
-
-
-
-
-
       // raytracing
       double A=0,B=0;
       std::tie(A,B) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));
@@ -329,7 +237,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
 
 
-    }
+    } // end rayid == 0 (good reconstruction)
 
     if (rcnp.GR_ADC()) {
       auto& adc = *rcnp.GR_ADC();
@@ -459,13 +367,11 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
         obj.FillHistogram("COIN_Calibrated",stream.str(),500,0,20,Ex,5000,0,10000,core_hit.GetEnergy());
 
         stream << "Det_PZ_AsymBL_" << detector << "_" << chan;
-        obj.FillHistogram("COIN_Calibrated", stream.str().c_str(),5000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
+        obj.FillHistogram("COIN_Calibrated", stream.str().c_str(),5000,0,10000,core_hit.GetCorrectedEnergy());
 
         stream.str("");
         stream << "Ex_CAGRACorrected_" << detector << "_" << chan;
         obj.FillHistogram("COIN_Calibrated", stream.str().c_str(),500,0,20,Ex,10000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
-
-        //}
 
       }
 
