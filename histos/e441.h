@@ -39,8 +39,45 @@ double omega(double x, double y, double z){
   return sqrt(x*x + y*y + z*z -2*x*y -2*y*z -2*x*z);
 }
 
-double *kine_2b(double m1, double m2, double m3, double m4, double K_proj, double thetalab, double K_eject);
+double *kine_2b(double m1, double m2, double m3, double m4, double K_proj, double thetalab, double K_eject){
+  // m1(projectile) - m2(target) - m3(ejectile) - and m4(recoil)
 
+  double Et1 = K_proj + m1;
+  double Et2 = m2;
+  double Et3 = K_eject + m3;
+  double Et4  = Et1 + Et2 - Et3;
+  double m4_ex, Ex, theta_cm;
+  double s,t,u; //---Mandelstam variables
+  double p1, p3;
+  double J_LtoCM; //jacobian Lab to CM
+
+  s = pow(m1,2) + pow(m2,2) +2*m2*Et1;
+  u = pow(m2,2) + pow(m3,2) - 2*m2*Et3;
+
+  m4_ex = sqrt(  (cos(thetalab) * omega(s,pow(m1,2),pow(m2,2)) * omega(u,pow(m2,2),pow(m3,2)) - (s - pow(m1,2) - pow(m2,2))*(pow(m2,2) + pow(m3,2) - u) )/(2*pow(m2,2)) + s + u - pow(m2,2)  );
+  Ex = m4_ex - m4;
+
+  t =   pow(m2,2) + pow(m4_ex,2) - 2*m2*Et4;
+
+  //for normal kinematics
+  theta_cm = acos( ( pow(s,2) +s*(2*t - pow(m1,2) - pow(m2,2) - pow(m3,2) - pow(m4_ex,2)) + (pow(m1,2) - pow(m2,2))*(pow(m3,2) - pow(m4_ex,2)) )/( omega(s,pow(m1,2),pow(m2,2))*omega(s,pow(m3,2),pow(m4_ex,2))) ) ;
+
+  //for inverse kinematics Note: this angle corresponds to the recoil
+  //theta_cm = TMath::Pi() - acos( ( pow(s,2) +s*(2*t - pow(m1,2) - pow(m2,2) - pow(m3,2) - pow(m4_ex,2)) + (pow(m1,2) - pow(m2,2))*(pow(m3,2) - pow(m4_ex,2)) )/( omega(s,pow(m1,2),pow(m2,2))*omega(s,pow(m3,2),pow(m4_ex,2))) ) ;
+
+  p1= sqrt(pow(Et1,2)-pow(m1,2));
+  p3 = sqrt(pow(Et3,2)-pow(m3,2));
+
+  J_LtoCM = abs( ((omega(s,pow(m1,2),pow(m2,2))*omega(s,pow(m3,2),pow(m4,2)))/(4*s*p1*p3))*(1.+Et1/m2 - cos(thetalab)*(Et3*p1)/(m2*p3)) );
+
+
+  static double output[3];
+  output[0]= theta_cm;
+  output[1]= Ex;
+  output[2]= J_LtoCM;
+  return output;
+
+}
 ///=============Brho to Kinetic energy transform===========
 double BrhoToTKE(double  brho, double  mass, double Z) {
   //     convert brho (magnetic rigidity) to tke (total kinetic energy)

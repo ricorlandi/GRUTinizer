@@ -29,53 +29,54 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
   auto flags = core_hit.GetFlags();
   if (TANLEvent::PileUpFlag(flags) || TANLEvent::PileUpOnlyFlag(flags)) { return; }
 
-  auto boardid = core_hit.GetBoardID();
-  auto chan = core_hit.GetChannel();
+  int detector = core_hit.GetDetnum();
+  string chan = std::to_string(core_hit.GetLeaf()) + std;:to_string(core_hit.GetSegnum());
 
   Double_t prerise = core_hit.GetPreRise()/TANLEvent::GetShapingTime();
-
-  prerise = core_hit.GetPreRise()/TANLEvent::GetShapingTime();
-  stream.str("");  stream << "Prerise[Q]_" << boardid << "_" << chan;
+  stream.str("");  stream << "Prerise[Q]_" << detector << "_" << chan;
   obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,core_hit.GetCharge(),1250,6000,8500,prerise);
   for (auto& seg_hit : core_hit) {
-    stream.str("");  stream << "Prerise[Q]_" << seg_hit.GetBoardID() << "_" << seg_hit.GetChannel();
+    string seg_chan = std::to_string(seg_hit.GetLeaf()) + std;:to_string(seg_hit.GetSegnum());
+    stream.str("");  stream << "Prerise[Q]_" << detector << "_" << seg_chan;
     obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,seg_hit.GetCharge(),1250,6000,8500,prerise);
   }
-  // stream.str("");  stream << "Q[Prerise]_" << boardid << "_" << chan;
+  // stream.str("");  stream << "Q[Prerise]_" << detector << "_" << chan;
   // obj.FillHistogram(local_dirname, stream.str(),1250,6000,8500,prerise,3000,0,6000,core_hit.GetCharge());
   // for (auto& seg : core_hit) {
-  //   stream.str("");  stream << "Q[Prerise]Seg_" << seg.GetBoardID() << "_" << seg.GetChannel();
+  //   string seg_chan = std::to_string(seg_hit.GetLeaf()) + std;:to_string(seg_hit.GetSegnum());
+  //   stream.str("");  stream << "Q[Prerise]Seg_" << detector << "_" << seg_chan;
   //   obj.FillHistogram(local_dirname, stream.str(),1250,6000,8500,prerise,3000,0,6000,seg.GetCharge());
   // }
 
-  stream.str("");  stream << "Prerise[E_pzcor_basesample]_" << boardid << "_" << chan;
+  stream.str("");  stream << "Prerise[E_pzcor_basesample]_" << detector << "_" << chan;
   obj.FillHistogram(local_dirname, stream.str(),3000,0,6000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()),1250,6000,8500,prerise);
-  stream.str("");  stream << "Prerise[E_pzcor_constant]_" << boardid << "_" << chan;
+  stream.str("");  stream << "Prerise[E_pzcor_constant]_" << detector << "_" << chan;
   obj.FillHistogram(local_dirname, stream.str(),3000,-2000,4000,core_hit.GetCorrectedEnergy(),1250,6000,8500,prerise);
 
 
 
-  stream.str(""); stream << "E_pzcor_basesample" << boardid << "_" << chan;
+  stream.str(""); stream << "E_pzcor_basesample" << detector << "_" << chan;
   obj.FillHistogram(local_dirname,stream.str(),4000,0,0,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
 
-  stream.str(""); stream << "E_pzcor_constant" << boardid << "_" << chan;
+  stream.str(""); stream << "E_pzcor_constant" << detector << "_" << chan;
   auto pzchan = core_hit.GetCorrectedEnergy();
   obj.FillHistogram(local_dirname,stream.str(),4000,0,0,pzchan);
   for (auto& seg_hit : core_hit) {
-    stream.str(""); stream << "E_pzcor_constant" << seg_hit.GetBoardID() << "_" << seg_hit.GetChannel();
+    string seg_chan = std::to_string(seg_hit.GetLeaf()) + std;:to_string(seg_hit.GetSegnum());
+    stream.str(""); stream << "E_pzcor_constant" << detector << "_" << seg_chan;
     obj.FillHistogram(local_dirname,stream.str(),4000,0,0,seg_hit.GetCorrectedEnergy());
   }
 
   // auto trace = core_hit.GetTrace();
   // if(trace->size() > 10) {
-  //   stream.str(""); stream << "Etrace" << boardid << "_" << chan;
+  //   stream.str(""); stream << "Etrace" << detector << "_" << chan;
   //   obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,core_hit.GetTraceHeight());
 
   //   auto trace_E = core_hit.GetTraceHeightPZ();
-  //   stream.str(""); stream << "Etrace_pzcor_constant" << boardid << "_" << chan;
+  //   stream.str(""); stream << "Etrace_pzcor_constant" << detector << "_" << chan;
   //   obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,trace_E);
 
-  //   stream.str(""); stream << "Etrace_sanitized" << boardid << "_" << chan;
+  //   stream.str(""); stream << "Etrace_sanitized" << detector << "_" << chan;
   //   obj.FillHistogram(local_dirname,stream.str(),4000,0,8000,core_hit.GetTraceHeight());
 
   // }
@@ -116,35 +117,32 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
     //PileUp(obj,core_hit);
 
-    auto boardid = core_hit.GetBoardID();
-    auto chan = core_hit.GetChannel();
+    int detector = core_hit.Detnum();
+    string chan = std::to_string(core_hit.GetLeaf()) + std;:to_string(core_hit.GetSegnum());
 
 
     // central contact signals
     //stream.str("");
-    name = "Ge_" + std::to_string(boardid) + "_" + std::to_string(chan);
-    //stream << "Ge_" << boardid << "_" << chan;
+    name = "Det_" + std::to_string(detector) + "_" + std::to_string(chan);
+    //stream << "Det_" << detector << "_" << chan;
     //obj.FillHistogram("CAGRA_Raw", stream.str(),2500,0,5000,core_hit.GetCharge());
     obj.FillHistogram("CAGRA_Raw", name,2000,0,0,core_hit.GetCharge());
 
     // segment (side channel) signals
     for (auto& segment : core_hit) {
-      stream.str("");
-      stream << "Ge_" << segment.GetBoardID() << "_" << segment.GetChannel();
+      string seg_chan = std::to_string(segment.GetLeaf()) + std;:to_string(segment.GetSegnum());
+      stream.str(""); stream << "Det_" << detector << "_" << seg_chan;
       obj.FillHistogram("CAGRA_Raw",stream.str(),2000,0,0,segment.GetCharge());
     }
 
-    if (boardid==109 && chan==0) {
-      obj.FillHistogram("CAGRA_Calibrated","Ge_109_0_test",2000,0,10000,core_hit.GetCharge()*2.29+3.09);
-    }
 
     // same but for calibrated energies
     stream.str("");
-    stream << "Ge_" << boardid << "_" << chan;
+    stream << "Det_" << detector << "_" << chan;
     obj.FillHistogram("CAGRA_Calibrated",stream.str(),2000,0,10000,core_hit.GetEnergy());
     for (auto& segment : core_hit) {
-      stream.str("");
-      stream << "Ge_" << segment.GetBoardID() << "_" << segment.GetChannel();
+      string seg_chan = std::to_string(segment.GetLeaf()) + std;:to_string(segment.GetSegnum());
+      stream.str(""); stream << "Det_" << detector << "_" << seg_chan;
       obj.FillHistogram("CAGRA_Calibrated",stream.str(),2000,0,10000,segment.GetEnergy());
     }
 
@@ -154,21 +152,12 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
 
     static ULong_t first_ts = 0;
-    if (first_ts <= 1e6){  first_ts = core_hit.Timestamp(); std::cout << first_ts << std::endl; }
+    if (first_ts <= 1e6){  first_ts = core_hit.Timestamp(); std::cout << "First timestamp: " << first_ts << "\n" << std::endl; }
     else {
       obj.FillHistogram("NumEvents","cagra_hits_time",1000,0,8000,(core_hit.Timestamp()-first_ts)*10/1.0e9);
     }
 
-    if (core_hit.GetSystem()=='Y') {
-      if (core_hit.GetNumSegments() > 0) {
-        for (auto& seg_hit : core_hit) {
-          stream.str(""); stream << "Q"<<boardid<<"_"<< chan << "[Q"<<seg_hit.GetBoardID()<<"_"<<seg_hit.GetLeaf() << "]";
-          obj.FillHistogram("Segments",stream.str(),
-                            200,0,0,core_hit.GetCharge(),
-                            200,0,0,seg_hit.GetCharge());
-        }
-      }
-    }
+
   } // end loop over cagra hits
 
 }
@@ -368,8 +357,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
         obj.FillHistogram("GR","X_LaBr",1200,-600,600,rcnp.GR_X(0),10000,-5000,15000,labr_hit.width);
       }
 
-      /* cut on prompt timing peak */ // Needs to be updated for campaign !!!!!!!!!!!
-//       if (false && labr_hit.qtc_le>=-4000 && labr_hit.qtc_le <=-3250) {
+      /* !!!!!!!!! cut on prompt timing peak */ // Needs to be updated for e441 !!!!!!!!!!!
       if ((labr_hit.qtc_le>=-4000) && (labr_hit.qtc_le<=-3000)) {
 
         obj.FillHistogram("GR_Prompt","RayID",64,-16,48, rcnp.GR_RAYID(0));
@@ -413,7 +401,6 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
   }
 
 
-
   for (auto& hit : gr) {
 
     auto& rcnp = hit.GR();
@@ -432,11 +419,11 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 
     // coincidence time difference
     for (auto& core_hit : cagra) {
+      int detector = core_hit.Detnum();
+      string chan = std::to_string(core_hit.GetLeaf()) + std;:to_string(core_hit.GetSegnum());
 
       auto cagratime = core_hit.Timestamp();
       auto tdiff = cagratime-grtime;
-      auto boardid = core_hit.GetBoardID();
-      auto channel = core_hit.GetChannel();
 
       obj.FillHistogram("COIN","Diff_CAGRA_GR", 1000,-500,1500,cagratime-grtime);
       if (pulser_event!=true) {
@@ -444,41 +431,38 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
       }
 
       stream.str("");
-      stream << "TimeDiff_" << boardid << "_" << channel;
+      stream << "TimeDiff_" << detector << "_" << chan;
       obj.FillHistogram("COIN",stream.str().c_str(),1000,-500,1500,tdiff);
 
 
-      stream.str(""); stream << "Egam[tdiff]_" <<boardid << "_" << channel;
+      stream.str(""); stream << "Egam[tdiff]_" <<detector << "_" << chan;
       obj.FillHistogram(stream.str(),5000,0,10000,core_hit.GetCorrectedEnergy(),1000,-500,1500,tdiff);
 
       // gate on prompt peak from time diff of the timestamps of CAGRA & GR
       if ( (tdiff > 240) && (tdiff < 255) ){
 
         stream.str("");
-        stream << "Ge_"<< boardid << "_" << channel;
-        //if ((boardid==114) || (boardid==116) ||  (boardid==117) || (boardid==118) || (boardid==119) ||(boardid==120)) {
-          obj.FillHistogram("COIN_Raw",stream.str(),500,0,10000,core_hit.GetCharge());
-          //}
+        stream << "Det_"<< detector << "_" << chan;
+        obj.FillHistogram("COIN_Raw",stream.str(),500,0,10000,core_hit.GetCharge());
         stream.str("");
-        stream << "Ge_" << boardid << "_" << channel;
+        stream << "Det_" << detector << "_" << chan;
         obj.FillHistogram("COIN_Calibrated",stream.str(),10000,0,10000,core_hit.GetEnergy());
 
         for (auto& segment : core_hit) {
-          stream.str("");
-          stream << "Ge_" << segment.GetBoardID() << "_" << segment.GetChannel();
+          string seg_chan = std::to_string(segment.GetLeaf()) + std;:to_string(segment.GetSegnum());
+          stream.str(""); stream << "Det_" << detector << "_" << seg_chan;
           obj.FillHistogram("COIN_Calibrated",stream.str(),10000,0,10000,segment.GetEnergy());
         }
 
         stream.str("");
-        stream << "Ex_Ge_" << boardid << "_" << channel;
+        stream << "Ex_Egam_" << detector << "_" << chan;
         obj.FillHistogram("COIN_Calibrated",stream.str(),500,0,20,Ex,5000,0,10000,core_hit.GetEnergy());
 
-        //if ((boardid==114) || (boardid==116) ||  (boardid==117) || (boardid==118) || (boardid==119) ||(boardid==120)) {
-        stream << "Ge_PZ_AsymBL_" << boardid << "_" << channel;
+        stream << "Det_PZ_AsymBL_" << detector << "_" << chan;
         obj.FillHistogram("COIN_Calibrated", stream.str().c_str(),5000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
 
         stream.str("");
-        stream << "Ex_CAGRACorrected_" << boardid << "_" << channel;
+        stream << "Ex_CAGRACorrected_" << detector << "_" << chan;
         obj.FillHistogram("COIN_Calibrated", stream.str().c_str(),500,0,20,Ex,10000,0,10000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
 
         //}
@@ -495,11 +479,12 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 }
 
 void LoadCuts() {
-  // static bool once = true;
-  // if (once) {
-  //   TPreserveGDirectory preserve;
-  //   TFile f("new_cut.root");
-  //   mycut = (TCutG*)f.Get("_cut0");
-  //   once = false;
+  // Example of how to load a cut once.
+  // statically define the cut in e441.h
+  // if(!your_fav_cut) {
+  //   TPreserveGDirectory Preserve;
+  //   TFile fcut("./cuts/newHe3cut.root");
+  //   your_fav_cut = (TCutG*)fcut.Get("_cut0");
+  //   std::cout << "Loaded he3 gate." << std::endl;
   // }
 }
