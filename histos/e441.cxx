@@ -91,7 +91,25 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
     //PileUp(obj,core_hit);
 
     int detector = core_hit.Detnum();
-    string chan = std::to_string(core_hit.GetLeaf()) + std;:to_string(core_hit.GetSegnum());
+    char core_leaf = core_hit.GetLeaf();
+    string chan = std::to_string(core_leaf) + std;:to_string(core_hit.GetSegnum());
+    size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+
+    // cagra core energy summary
+    obj.FillHistogram("CrystalEnergySummary",
+                      4000,0,8000,core_hit.GetCorrectedEnergy(),
+                      48,0,48,crystal_id);
+
+    static ULong_t first_ts = 0;
+    if (first_ts <= 1e6){  first_ts = core_hit.Timestamp(); std::cout << "Timestamp: " << first_ts << "\n" << std::endl; }
+    else {
+      // cagra core time summary
+      obj.FillHistogram("CrystalTimeSummary",
+                        1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // in seconds - 1 bin = 4 seconds
+                        48,0,48,crystal_id);
+
+      obj.FillHistogram("NumEvents","cagra_hits_time",1000,0,8000,(core_hit.Timestamp()-first_ts)*10/1.0e9);
+    }
 
 
     // central contact signals
@@ -120,12 +138,6 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
     PoleZeroHistos(obj,core_hit,"PoleZero");
 
-
-    static ULong_t first_ts = 0;
-    if (first_ts <= 1e6){  first_ts = core_hit.Timestamp(); std::cout << "First timestamp: " << first_ts << "\n" << std::endl; }
-    else {
-      obj.FillHistogram("NumEvents","cagra_hits_time",1000,0,8000,(core_hit.Timestamp()-first_ts)*10/1.0e9);
-    }
 
 
   } // end loop over cagra hits

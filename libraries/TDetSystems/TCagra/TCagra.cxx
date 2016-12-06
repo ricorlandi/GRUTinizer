@@ -419,8 +419,15 @@ void TCagra::LoadDetectorPositions() {
       continue;
     }
 
-    int index = (nclover << 16) + (((int)ncrystal) << 8) + nsegment;
+    int index = (nclover << 16) + (((int)ncrystal) << 8);
 
+    // assign a unique id to each clover crystal
+    static size_t core_count = 0;
+    if (crystal_ids.count(index) == 0) {
+      crystal_ids[index] = core_count++;
+    }
+
+    index += nsegment;
     //Pack into the vector of transformations.
     TVector3 vec = TVector3(1.,1.,1.);
     vec.SetTheta(theta*TMath::Pi()/180.);
@@ -428,6 +435,10 @@ void TCagra::LoadDetectorPositions() {
     vec.SetMag(rho);
     detector_positions[index] = vec;
   }
+}
+size_t TCagra::GetCrystalId(int slot, char core) const {
+  int index = (slot << 16) + (((int)core) << 8);
+  return crystal_ids.at(index);
 }
 
 void TCagra::Print(Option_t *opt) const { }
