@@ -33,6 +33,14 @@ static string name;
 static string dirname="";
 static stringstream stream;
 
+static TNucleus li6("6Li");
+static TNucleus c12("12C");
+static TNucleus mg24("24Mg");
+static TNucleus fe56("56Fe");
+static TNucleus nb93("93Nb");
+static TNucleus sn124("124Sn");
+//static TNucleus li6ex(3,3,li6.GetMass()+Li6Ex,"6Li*");
+
 ///=============Two Body Kinematics===========
 //Kinematics based on the Mandelstam invariant variables
 double omega(double x, double y, double z){
@@ -231,6 +239,7 @@ std::pair<double,double> VectorStats(const std::vector<short int>& vec) {
 #define n_amu 1.0086654
 #define n_ch 0
 #define n_mass n_amu*aum //in MeV
+#define Li6Ex 3.5628 // MeV
 #define H1  1.00782503223 // in aum
 #define H1_ch 1
 #define H1_mass (H1 -  H1_ch*e_mass )*aum //in MeV
