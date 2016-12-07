@@ -97,7 +97,7 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
     // cagra core energy summary
     obj.FillHistogram("CrystalEnergySummary",
-                      3000,-2000,10000,core_hit.GetCorrectedEnergy(),
+                      5100,-200,10000,core_hit.GetCorrectedEnergy(),
                       49,0,49,crystal_id);
 
     static ULong_t first_ts = 0;
