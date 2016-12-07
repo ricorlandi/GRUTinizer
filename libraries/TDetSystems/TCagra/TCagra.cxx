@@ -421,9 +421,11 @@ void TCagra::LoadDetectorPositions() {
     int index = (nclover << 16) + (((int)ncrystal) << 8);
 
     // assign a unique id to each clover crystal
-    static size_t core_count = 0;
-    if (crystal_ids.count(index) == 0) {
-      crystal_ids[index] = core_count++;
+    if (ncrystal != 'X') {
+      static size_t core_count = 0;
+      if (crystal_ids.count(index) == 0) {
+        crystal_ids[index] = core_count++;
+      }
     }
 
     index += nsegment;
@@ -438,6 +440,7 @@ void TCagra::LoadDetectorPositions() {
   positions_loaded = true;
 }
 size_t TCagra::GetCrystalId(int slot, char core) {
+  if (core == 'X') { return (size_t)-1; }
   int index = (slot << 16) + (((int)core) << 8);
   return crystal_ids.at(index);
 }
