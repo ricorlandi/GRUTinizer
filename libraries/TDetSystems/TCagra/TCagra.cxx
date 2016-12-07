@@ -16,10 +16,11 @@
 
 std::map<int,TVector3> TCagra::detector_positions;
 std::map<int,size_t> TCagra::crystal_ids;
-
+bool TCagra::positions_loaded = false;
 
 TCagra::TCagra(){
   Clear();
+  LoadDetectorPositions();
 }
 
 TCagra::~TCagra() {
@@ -380,11 +381,7 @@ TVector3 TCagra::GetSegmentPosition(int slot, char core, int seg) {
   if(slot < 1 || slot > 16 || seg < 0 || seg > 4) {
     return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1));
   }
-  static bool once = true;
-  if (once) {
-    LoadDetectorPositions();
-    once = false;
-  }
+  LoadDetectorPositions();
 
   int index = (slot << 16) + (((int)core) << 8) + seg;
 
@@ -396,6 +393,7 @@ TVector3 TCagra::GetSegmentPosition(int slot, char core, int seg) {
 }
 
 void TCagra::LoadDetectorPositions() {
+  if (positions_loaded) { return; }
 
   std::string filename = std::string(getenv("GRUTSYS")) + "/config/CAGRA_positions.txt";
 
@@ -436,6 +434,8 @@ void TCagra::LoadDetectorPositions() {
     vec.SetMag(rho);
     detector_positions[index] = vec;
   }
+
+  positions_loaded = true;
 }
 size_t TCagra::GetCrystalId(int slot, char core) {
   int index = (slot << 16) + (((int)core) << 8);

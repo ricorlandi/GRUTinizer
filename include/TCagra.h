@@ -42,6 +42,7 @@ private:
   std::vector<TCagraHit> cagra_hits;
   static std::map<int,TVector3> detector_positions;
   static std::map<int,size_t> crystal_ids;
+  static bool positions_loaded;
 
   ClassDef(TCagra,1);
 };
