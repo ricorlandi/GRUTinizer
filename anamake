@@ -1,11 +1,11 @@
 inputfiles = inputfiles.dat
 data_dir = /np1a/cagra/gr/2016campaign
 rootfiles_subdir = rootfiles/E450
-histo_lib = lib/libRCNPhistos.so
+histo_lib = ./lib/libLaBr3traces.so
 other_config_files = 
 grutinizer = ./bin/grutinizer
 detector_env =
-channels = config/online_recabling.cal
+channels = ./config/online.cal
 values =  config/rcnp_constants.val
 cuts =
 
