@@ -30,20 +30,20 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
   if (TANLEvent::PileUpFlag(flags) || TANLEvent::PileUpOnlyFlag(flags)) { return; }
 
   int detector = core_hit.GetDetnum();
-  string chan = std::to_string(core_hit.GetLeaf()) + std;:to_string(core_hit.GetSegnum());
+  string chan = std::to_string(core_hit.GetLeaf()) + std::to_string(core_hit.GetSegnum());
 
   Double_t prerise = core_hit.GetPreRise()/TANLEvent::GetShapingTime();
   stream.str("");  stream << "Prerise[Q]_" << detector << "_" << chan;
   obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,core_hit.GetCharge(),1250,6000,8500,prerise);
   for (auto& seg_hit : core_hit) {
-    string seg_chan = std::to_string(seg_hit.GetLeaf()) + std;:to_string(seg_hit.GetSegnum());
+    string seg_chan = std::to_string(seg_hit.GetLeaf()) + std::to_string(seg_hit.GetSegnum());
     stream.str("");  stream << "Prerise[Q]_" << detector << "_" << seg_chan;
     obj.FillHistogram(local_dirname, stream.str(),2000,0,10000,seg_hit.GetCharge(),1250,6000,8500,prerise);
   }
   // stream.str("");  stream << "Q[Prerise]_" << detector << "_" << chan;
   // obj.FillHistogram(local_dirname, stream.str(),1250,6000,8500,prerise,3000,0,6000,core_hit.GetCharge());
   // for (auto& seg : core_hit) {
-  //   string seg_chan = std::to_string(seg_hit.GetLeaf()) + std;:to_string(seg_hit.GetSegnum());
+  //   string seg_chan = std::to_string(seg_hit.GetLeaf()) + std::to_string(seg_hit.GetSegnum());
   //   stream.str("");  stream << "Q[Prerise]Seg_" << detector << "_" << seg_chan;
   //   obj.FillHistogram(local_dirname, stream.str(),1250,6000,8500,prerise,3000,0,6000,seg.GetCharge());
   // }
@@ -62,7 +62,7 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
   auto pzchan = core_hit.GetCorrectedEnergy();
   obj.FillHistogram(local_dirname,stream.str(),4000,0,0,pzchan);
   for (auto& seg_hit : core_hit) {
-    string seg_chan = std::to_string(seg_hit.GetLeaf()) + std;:to_string(seg_hit.GetSegnum());
+    string seg_chan = std::to_string(seg_hit.GetLeaf()) + std::to_string(seg_hit.GetSegnum());
     stream.str(""); stream << "E_pzcor_constant" << detector << "_" << seg_chan;
     obj.FillHistogram(local_dirname,stream.str(),4000,0,0,seg_hit.GetCorrectedEnergy());
   }
@@ -90,9 +90,9 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
     //PileUp(obj,core_hit);
 
-    int detector = core_hit.Detnum();
+    int detector = core_hit.GetDetnum();
     char core_leaf = core_hit.GetLeaf();
-    string chan = std::to_string(core_leaf) + std;:to_string(core_hit.GetSegnum());
+    string chan = std::to_string(core_leaf) + std::to_string(core_hit.GetSegnum());
     size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
 
     // cagra core energy summary
@@ -113,12 +113,12 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
 
     // central contact signals
-    name = "Det_" + std::to_string(detector) + "_" + std::to_string(chan);
+    name = "Det_" + std::to_string(detector) + "_" + chan;
     obj.FillHistogram("CAGRA_Raw", name,2000,0,0,core_hit.GetCharge());
 
     // segment (side channel) signals
     for (auto& segment : core_hit) {
-      string seg_chan = std::to_string(segment.GetLeaf()) + std;:to_string(segment.GetSegnum());
+      string seg_chan = std::to_string(segment.GetLeaf()) + std::to_string(segment.GetSegnum());
       stream.str(""); stream << "Det_" << detector << "_" << seg_chan;
       obj.FillHistogram("CAGRA_Raw",stream.str(),2000,0,0,segment.GetCharge());
     }
@@ -129,7 +129,7 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
     stream << "Det_" << detector << "_" << chan;
     obj.FillHistogram("CAGRA_Calibrated",stream.str(),2000,0,10000,core_hit.GetEnergy());
     for (auto& segment : core_hit) {
-      string seg_chan = std::to_string(segment.GetLeaf()) + std;:to_string(segment.GetSegnum());
+      string seg_chan = std::to_string(segment.GetLeaf()) + std::to_string(segment.GetSegnum());
       stream.str(""); stream << "Det_" << detector << "_" << seg_chan;
       obj.FillHistogram("CAGRA_Calibrated",stream.str(),2000,0,10000,segment.GetEnergy());
     }
@@ -236,16 +236,16 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
 
       // raytracing
-      double A=0,B=0;
-      std::tie(A,B) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));
-      obj.FillHistogram(dirname,"B[A]",500,0,0,A,500,0,0,B);
+      // double A=0,B=0;
+      // std::tie(A,B) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));
+      // obj.FillHistogram(dirname,"B[A]",500,0,0,A,500,0,0,B);
 
-      for (auto& cut : xcuts) {
-        if (x < cut+xwidth && x >= cut) {
-          stream.str(""); stream << "_x[" << cut << "," << cut+xwidth << ")";
-          obj.FillHistogram(dirname,"B[A]"+stream.str(),500,0,0,A,500,0,0,B);
-        }
-      }
+      // for (auto& cut : xcuts) {
+      //   if (x < cut+xwidth && x >= cut) {
+      //     stream.str(""); stream << "_x[" << cut << "," << cut+xwidth << ")";
+      //     obj.FillHistogram(dirname,"B[A]"+stream.str(),500,0,0,A,500,0,0,B);
+      //   }
+      // }
 
 
 
@@ -339,8 +339,8 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 
     // coincidence time difference
     for (auto& core_hit : cagra) {
-      int detector = core_hit.Detnum();
-      string chan = std::to_string(core_hit.GetLeaf()) + std;:to_string(core_hit.GetSegnum());
+      int detector = core_hit.GetDetnum();
+      string chan = std::to_string(core_hit.GetLeaf()) + std::to_string(core_hit.GetSegnum());
 
       auto cagratime = core_hit.Timestamp();
       auto tdiff = cagratime-grtime;
@@ -369,7 +369,7 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
         obj.FillHistogram("COIN_Calibrated",stream.str(),10000,0,10000,core_hit.GetEnergy());
 
         for (auto& segment : core_hit) {
-          string seg_chan = std::to_string(segment.GetLeaf()) + std;:to_string(segment.GetSegnum());
+          string seg_chan = std::to_string(segment.GetLeaf()) + std::to_string(segment.GetSegnum());
           stream.str(""); stream << "Det_" << detector << "_" << seg_chan;
           obj.FillHistogram("COIN_Calibrated",stream.str(),10000,0,10000,segment.GetEnergy());
         }

@@ -17,6 +17,7 @@
 #include "TGrandRaiden.h"
 #include "TANLEvent.h"
 #include "GValue.h"
+#include "TNucleus.h"
 
 #define BAD_NUM -441441
 #define PRINT(x) std::cout << #x" = " << x << std::endl
@@ -94,43 +95,6 @@ double BrhoToTKE(double  brho, double  mass, double Z) {
   //             Z = q/e (no-dim)
   //     output: TKE (MeV)
   return mass * (sqrt(1. + TMath::Power(((1.e2 * brho * TMath::C() / 1.e8 * Z) / mass), 2)) - 1.);
-}
-
-void DrawAverageTrace(TCagraHit& core_hit) {
-// Average trace analysis
-  //////////////////
-  static int counter=0;
-  static std::vector<std::vector<short int>> traces;
-  auto trace = core_hit.GetSanitizedTrace();
-  if(trace->size() > 50) {
-    traces.push_back(*trace);
-  }
-
-  if (traces.size() >= 100) {
-    // do a transpose to convert to vector<short int> for each bin
-    std::vector<std::vector<short int>> bins(traces[0].size());
-    size_t prev_size = traces[0].size();
-    for (auto& atrace : traces) {
-      assert(atrace.size() == prev_size);
-      prev_size = atrace.size();
-      for (auto nbin = 0u; nbin<atrace.size(); nbin++) {
-        bins[nbin].push_back(atrace[nbin]);
-      }
-    }
-    // for each bin
-    // build avg histo with errors
-    std::vector<double> avgs, errors;
-    for (auto& bin : bins) {
-      double avg = 0, stddev = 0;
-      std::tie(avg, stddev) = VectorStats(bin);
-      avgs.push_back(avg);
-      errors.push_back(stddev);
-    }
-    TCagraHit::DrawTrace(avgs,errors);
-    std::cin.get();
-
-    traces.clear();
-  }
 }
 
 
@@ -231,6 +195,43 @@ std::pair<double,double> VectorStats(const std::vector<short int>& vec) {
   return std::pair<double,double>(avg,sqrt(sum/vec.size()));
 }
 
+
+void DrawAverageTrace(TCagraHit& core_hit) {
+// Average trace analysis
+  //////////////////
+  static int counter=0;
+  static std::vector<std::vector<short int>> traces;
+  auto trace = core_hit.GetSanitizedTrace();
+  if(trace->size() > 50) {
+    traces.push_back(*trace);
+  }
+
+  if (traces.size() >= 100) {
+    // do a transpose to convert to vector<short int> for each bin
+    std::vector<std::vector<short int>> bins(traces[0].size());
+    size_t prev_size = traces[0].size();
+    for (auto& atrace : traces) {
+      assert(atrace.size() == prev_size);
+      prev_size = atrace.size();
+      for (auto nbin = 0u; nbin<atrace.size(); nbin++) {
+        bins[nbin].push_back(atrace[nbin]);
+      }
+    }
+    // for each bin
+    // build avg histo with errors
+    std::vector<double> avgs, errors;
+    for (auto& bin : bins) {
+      double avg = 0, stddev = 0;
+      std::tie(avg, stddev) = VectorStats(bin);
+      avgs.push_back(avg);
+      errors.push_back(stddev);
+    }
+    TCagraHit::DrawTrace(avgs,errors);
+    std::cin.get();
+
+    traces.clear();
+  }
+}
 
 
 ///=============Mass definition============

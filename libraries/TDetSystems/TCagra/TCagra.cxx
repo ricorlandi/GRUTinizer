@@ -15,6 +15,7 @@
 #include <cassert>
 
 std::map<int,TVector3> TCagra::detector_positions;
+std::map<int,size_t> TCagra::crystal_ids;
 
 
 TCagra::TCagra(){
@@ -436,7 +437,7 @@ void TCagra::LoadDetectorPositions() {
     detector_positions[index] = vec;
   }
 }
-size_t TCagra::GetCrystalId(int slot, char core) const {
+size_t TCagra::GetCrystalId(int slot, char core) {
   int index = (slot << 16) + (((int)core) << 8);
   return crystal_ids.at(index);
 }

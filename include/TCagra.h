@@ -28,7 +28,7 @@ public:
   void PrintHit(int i){ cagra_hits.at(i).Print(); }
 
   static TVector3 GetSegmentPosition(int slot, char core, int seg);
-  static size_t GetCrystalId(int slot, char core) const;
+  static size_t GetCrystalId(int slot, char core);
 
   // Allows for looping over all hits with for(auto& hit : cagra) { }
   std::vector<TCagraHit>::iterator begin() { return cagra_hits.begin(); }

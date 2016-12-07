@@ -244,7 +244,7 @@ TVector3 TCagraHit::GetPosition(pos opt, bool apply_array_offset) const {
   return array_pos;
 }
 
-double TCagraHit::GetDoppler(double beta, pos opt = pos::both, const TVector3& particle_vec, const TVector3& offset) const {
+double TCagraHit::GetDoppler(double beta, pos opt, const TVector3& particle_vec, const TVector3& offset) const {
 
   double gamma = 1/(sqrt(1-pow(beta,2)));
   TVector3 pos = GetPosition(opt) + offset;
