@@ -163,10 +163,10 @@ TVector3 TCagraHit::GetPosition(pos opt, bool apply_array_offset) const {
   // seg = 1 gives the more backward segment
   // seg = 2 gives the more forward segment
 
-  if (opt == pos::both || opt == pos::seg_only) {
+  if (chan->GetName()[0] == 'B') { return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1)); }
 
-    if (chan->GetName()[0] == 'B') { return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1)); }
-    else if (clover_type == 'Y') {
+  if (opt == pos::both || opt == pos::seg_only) {
+    if (clover_type == 'Y') {
 
       TCagraHit const* seg_hit = nullptr;
 

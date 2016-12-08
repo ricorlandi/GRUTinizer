@@ -38,25 +38,11 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
   for (auto& seg_hit : core_hit) {
     string seg_chan = seg_hit.GetLeaf() + std::to_string(seg_hit.GetSegnum());
     stream.str("");  stream << "Prerise[Q]_" << detector << "_" << seg_chan;
-    obj.FillHistogram(local_dirname, stream.str(),2000,-10000,0,seg_hit.GetCharge(),1250,6000,8500,prerise);
+    obj.FillHistogram(local_dirname, stream.str(),2000,0,0,seg_hit.GetCharge(),1250,6000,8500,prerise);
   }
-  // stream.str("");  stream << "Q[Prerise]_" << detector << "_" << chan;
-  // obj.FillHistogram(local_dirname, stream.str(),1250,6000,8500,prerise,3000,0,6000,core_hit.GetCharge());
-  // for (auto& seg : core_hit) {
-  //   string seg_chan = seg_hit.GetLeaf() + std::to_string(seg_hit.GetSegnum());
-  //   stream.str("");  stream << "Q[Prerise]Seg_" << detector << "_" << seg_chan;
-  //   obj.FillHistogram(local_dirname, stream.str(),1250,6000,8500,prerise,3000,0,6000,seg.GetCharge());
-  // }
 
-  stream.str("");  stream << "Prerise[E_pzcor_basesample]_" << detector << "_" << chan;
-  obj.FillHistogram(local_dirname, stream.str(),3000,0,6000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()),1250,6000,8500,prerise);
   stream.str("");  stream << "Prerise[E_pzcor_constant]_" << detector << "_" << chan;
   obj.FillHistogram(local_dirname, stream.str(),3000,-2000,4000,core_hit.GetCorrectedEnergy(),1250,6000,8500,prerise);
-
-
-
-  stream.str(""); stream << "E_pzcor_basesample" << detector << "_" << chan;
-  obj.FillHistogram(local_dirname,stream.str(),4000,0,0,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
 
   stream.str(""); stream << "E_pzcor_constant" << detector << "_" << chan;
   auto pzchan = core_hit.GetCorrectedEnergy();
@@ -66,7 +52,6 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
     stream.str(""); stream << "E_pzcor_constant" << detector << "_" << seg_chan;
     obj.FillHistogram(local_dirname,stream.str(),4000,0,0,seg_hit.GetCorrectedEnergy());
   }
-
 }
 
 void PileUp (TRuntimeObjects& obj, TCagraHit& core_hit) {
@@ -75,10 +60,10 @@ void PileUp (TRuntimeObjects& obj, TCagraHit& core_hit) {
   auto flags = core_hit.GetFlags();
   auto pileup = TANLEvent::PileUpFlag(flags);
   if (pileup) {
-    obj.FillHistogram(dirname,"Summary",10,1,10,3);
+    obj.FillHistogram(dirname,"Ratio",10,1,10,3);
     PoleZeroHistos(obj,core_hit,dirname);
   } else {
-    obj.FillHistogram(dirname,"Summary",10,1,10,7);
+    obj.FillHistogram(dirname,"Ratio",10,1,10,7);
     PoleZeroHistos(obj,core_hit,"NoPileUp");
   }
 }
@@ -137,6 +122,12 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
 
     PoleZeroHistos(obj,core_hit,"PoleZero");
+
+    auto position = core_hit.GetPosition(pos::both);
+
+    obj.FillHistogram("ArrayHits",
+                      180,0,180,position.Theta()*180/TMath::Pi(),
+                      360,-180,180,position.Phi()*180/TMath::Pi());
 
 
 
