@@ -6,8 +6,14 @@
 
 ClassImp(TGrandRaidenHit)
 
+
+std::vector<double> TGrandRaidenHit::acoefs;
+std::vector<double> TGrandRaidenHit::bcoefs;
+
+
 TGrandRaidenHit::TGrandRaidenHit() {
   madc1=0; madc2=0; tpos1=0; tpos2=0;
+  vector = nullptr;
 }
 TGrandRaidenHit::TGrandRaidenHit(const TGrandRaidenHit& gr) {
   labr_hits = gr.labr_hits;
@@ -76,9 +82,61 @@ void TGrandRaidenHit::BuildFrom(){
 #endif
 }
 
+void TGrandRaidenHit::SetRaytraceParams(std::vector<double> apar, std::vector<double> bpar) {
+  acoefs = std::move(apar);
+  bcoefs = std::move(bpar);
+}
 
+TVector3 TGrandRaidenHit::GetEjectileVector() {
+  if (vector) { return *vector; }
 
+  double thetax=0,thetay=0; // A,B
+  std::tie(thetax,thetay) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));
+  auto phi = TMath::ATan2(TMath::Sin(thetay),TMath::Sin(thetax));
+  auto theta = TMath::ASin(TMath::Sqrt( TMath::Power(TMath::Sin(thetax),2) + TMath::Power(TMath::Sin(thetay),2) ));
 
+  vector = new TVector3(1.,1.,1.);
+  vector->SetTheta(theta);
+  vector->SetPhi(phi);
+  vector->SetMag(1); // probably unnecessary, but ROOT...
+
+  return *vector;
+}
+
+unsigned int TGrandRaidenHit::xdegree = 2, TGrandRaidenHit::adegree = 2, TGrandRaidenHit::ydegree = 1;
+std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y) {
+  double sum = 0;
+  double count = 0;
+  double A = 0;
+  double B = 0;
+  // dispersive angle raytrace
+  for (auto i=0u; i<=xdegree; i++) {
+    sum += acoefs[i]*pow(x,i);
+    count = i;
+  }
+  for (auto i=0u; i<=adegree; i++) {
+    sum += acoefs[i+count+1]*pow(a,i);
+  }
+  A=sum;
+  sum=count=0;
+
+  // non-dispersive angle raytrace
+  for (auto i=0u; i<= xdegree; i++) {
+    double sum2 = 0;
+    for (auto j=0u; j<= adegree; j++) {
+      double sum3 = 0;
+      for (auto k=0u; k<= ydegree; k++) {
+        sum3 += bcoefs[count]*pow(y,k);
+        count++;
+      }
+      sum2 += sum3*pow(a,j);
+    }
+    sum += sum2*pow(x,i);
+  }
+  B=sum;
+
+  return std::pair<double,double>(A,B);
+}
 
 void TGrandRaidenHit::Copy(TObject& obj) const {
   TDetectorHit::Copy(obj);

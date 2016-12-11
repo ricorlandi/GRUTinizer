@@ -50,7 +50,7 @@ class TCagraHit : public TDetectorHit {
 
     double GetDoppler(double beta, pos opt = pos::both,
                       const TVector3& particle_vec = TVector3(0,0,1),
-                      const TVector3& cagra_offset = TVector3(0,0,0)) const;
+                      const TVector3& cagra_offset = TVector3(0,0,0));
 
     std::vector<TCagraHit>::iterator begin() { return fSegments.begin(); }
     std::vector<TCagraHit>::iterator end() { return fSegments.end(); }
@@ -123,6 +123,7 @@ class TCagraHit : public TDetectorHit {
     Short_t prev_postrise_begin_sample;
     Short_t prerise_begin;
     Short_t prerise_end;
+    Double_t corrected_energy;
 
     Double_t fit_params[2]; //!
 

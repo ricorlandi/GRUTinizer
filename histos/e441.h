@@ -97,77 +97,7 @@ double BrhoToTKE(double  brho, double  mass, double Z) {
   return mass * (sqrt(1. + TMath::Power(((1.e2 * brho * TMath::C() / 1.e8 * Z) / mass), 2)) - 1.);
 }
 
-
-// sieve slit transformation coefficients
-// output from sieveslit.py
-static std::vector<double> acoefs =
-{
-  25478959.64415743201971054,
-  -0.01771996157436579,
-  -0.00000375686641008,
-  -25478962.08887941017746925,
-  339.32639498225580610,
-  285.41500265652570079
-};
-static std::vector<double> bcoefs =
-{
-  -8.77979136468771948,
-  3.57167199982826045,
-  144.77038232928563843,
-  -102.62252113966886213,
-  -1669.00084319835968927,
-  1060.28866587772699859,
-  0.00281259943988080,
-  0.00390660581203093,
-  -0.57697427700803183,
-  -0.03624075884543333,
-  10.73431026156209711,
-  -0.86971847190018392,
-  0.00002737725798545,
-  -0.00000000249027871,
-  -0.00140344227013718,
-  0.00008863729153273,
-  0.01262661852581874,
-  -0.00031269175012557
-};
-
-
-static unsigned int xdegree = 2, adegree = 2, ydegree = 1;
-// angle reconstruction (energy reconstruction still needs implementation)
-// apply sieveslit transform to raytrace from focal plane to target position
-std::pair<double,double> raytrace(double x, double a, double y) {
-  double sum = 0;
-  double count = 0;
-  double A = 0;
-  double B = 0;
-  // dispersive angle raytrace
-  for (auto i=0u; i<=xdegree; i++) {
-    sum += acoefs[i]*pow(x,i);
-    count = i;
-  }
-  for (auto i=0u; i<=adegree; i++) {
-    sum += acoefs[i+count+1]*pow(a,i);
-  }
-  A=sum;
-  sum=count=0;
-
-  // non-dispersive angle raytrace
-  for (auto i=0u; i<= xdegree; i++) {
-    double sum2 = 0;
-    for (auto j=0u; j<= adegree; j++) {
-      double sum3 = 0;
-      for (auto k=0u; k<= ydegree; k++) {
-        sum3 += bcoefs[count]*pow(y,k);
-        count++;
-      }
-      sum2 += sum3*pow(a,j);
-    }
-    sum += sum2*pow(x,i);
-  }
-  B=sum;
-
-  return std::pair<double,double>(A,B);
-}
+void LoadRaytraceParams();
 
 double VectorAverage(const std::vector<short int>& vec) {
   double sum = 0;

@@ -29,7 +29,7 @@ class TGrandRaidenHit : public TDetectorHit {
 
     void     BuildFrom();
 
-
+    TVector3 GetEjectileVector();
 
     const std::vector<LaBrHit>& GetLaBr() { return labr_hits; }
     const Double_t& GetMeanPlastE1() { return madc1; }
@@ -38,7 +38,14 @@ class TGrandRaidenHit : public TDetectorHit {
     const Double_t& GetMeanPlastPos2() { return tpos2; }
     const Long_t& GetTimestamp() { return Timestamp; }
     RCNPEvent& GR() { return rcnp; }
+    static void SetRaytraceParams(std::vector<double> apar, std::vector<double> bpar);
+
 private:
+
+    // angle reconstruction (energy reconstruction still needs implementation)
+    // apply sieveslit transform to raytrace from focal plane to target position
+    std::pair<double,double> raytrace(double x, double a, double y);
+
     // Double_t ADC[4];
     // Double_t RF;
     // Double_t QTCLead;
@@ -51,6 +58,13 @@ private:
     Long_t Timestamp;
     RCNPEvent rcnp;
 
+    static unsigned int xdegree;  //!
+    static unsigned int adegree; //!
+    static unsigned int ydegree; //!
+    static std::vector<double> acoefs; //!
+    static std::vector<double> bcoefs; //!
+
+    TVector3* vector; //!
 
 
     ClassDef(TGrandRaidenHit,1);
