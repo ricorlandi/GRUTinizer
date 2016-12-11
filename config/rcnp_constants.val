@@ -25,3 +25,12 @@ k0_window {
 d3_window {
   Value: 0.2
 }
+
+
+GrandRaiden_Slope {
+  Value: 1.0
+}
+
+GrandRaiden_Offset {
+  Value: 0.0
+}

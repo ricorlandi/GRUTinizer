@@ -97,7 +97,7 @@ double BrhoToTKE(double  brho, double  mass, double Z) {
   return mass * (sqrt(1. + TMath::Power(((1.e2 * brho * TMath::C() / 1.e8 * Z) / mass), 2)) - 1.);
 }
 
-void LoadRaytraceParams();
+void LoadRaytraceParams(size_t xdeg=2, size_t adeg=2, size_t ydeg=1);
 
 double VectorAverage(const std::vector<short int>& vec) {
   double sum = 0;

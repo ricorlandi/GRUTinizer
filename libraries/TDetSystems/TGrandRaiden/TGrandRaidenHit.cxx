@@ -3,17 +3,20 @@
 #include "TGRUTOptions.h"
 #include "TSmartBuffer.h"
 #include "TMath.h"
+#include "GValue.h"
 
 ClassImp(TGrandRaidenHit)
 
 
 std::vector<double> TGrandRaidenHit::acoefs;
 std::vector<double> TGrandRaidenHit::bcoefs;
+unsigned int TGrandRaidenHit::xdegree = 2, TGrandRaidenHit::adegree = 2, TGrandRaidenHit::ydegree = 1;
 
 
 TGrandRaidenHit::TGrandRaidenHit() {
   madc1=0; madc2=0; tpos1=0; tpos2=0;
   vector = nullptr;
+  excitation_energy=0;
 }
 TGrandRaidenHit::TGrandRaidenHit(const TGrandRaidenHit& gr) {
   labr_hits = gr.labr_hits;
@@ -82,7 +85,10 @@ void TGrandRaidenHit::BuildFrom(){
 #endif
 }
 
-void TGrandRaidenHit::SetRaytraceParams(std::vector<double> apar, std::vector<double> bpar) {
+void TGrandRaidenHit::SetRaytraceParams(std::vector<double> apar, std::vector<double> bpar, size_t xdeg, size_t adeg, size_t ydeg) {
+  xdegree=xdeg;
+  adegree=adeg;
+  ydegree=ydeg;
   acoefs = std::move(apar);
   bcoefs = std::move(bpar);
 }
@@ -103,7 +109,13 @@ TVector3 TGrandRaidenHit::GetEjectileVector() {
   return *vector;
 }
 
-unsigned int TGrandRaidenHit::xdegree = 2, TGrandRaidenHit::adegree = 2, TGrandRaidenHit::ydegree = 1;
+
+double TGrandRaidenHit::GetExEnergy() {
+  if (excitation_energy) { return excitation_energy; }
+  excitation_energy = GValue::Value("GrandRaiden_Slope")*rcnp.GR_X(0) + GValue::Value("GrandRaiden_Offset");
+  return excitation_energy;
+}
+
 std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y) {
   double sum = 0;
   double count = 0;
