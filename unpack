@@ -1,0 +1,19 @@
+#!/bin/bash
+#PBS -q AM
+
+# usage : qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=<run number> unpack
+# e.g.  : qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=2071 unpack
+# rootfiles are placed in output directory below
+
+CALFILE=$1
+RUN=$2
+
+echo $RUN
+echo $CALFILE
+
+if [ $# != 2 ]; then
+	date > submission_error.dat
+	echo " USAGE: unpack [CAL_FILE] [RUN_NUMBER] " >> submission_error.dat
+else
+	qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=$RUN,CAL_FILE=$CALFILE ./unpack.pbs
+fi
