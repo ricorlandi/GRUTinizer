@@ -28,12 +28,13 @@ outputdir=$anadir/data/rootfiles/E441_online/
 
 run_number=$(echo "$RUN_NUMBER" | sed -r 's/.*_([0-9]*)\..*/\1/g')
 outputdir+="Run$run_number/"
-mkdir -p $outputdir
-cp $calibrations $constants $histdef $histsrc $outputdir
+#mkdir -p $outputdir
+#cp $calibrations $constants $histdef $histsrc $outputdir
 
 cagradatavar=$cagradata"run_"$run_number".gtd*"
 cagradatavar="\"$cagradatavar\""
 
-echo $grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"$run_number".bld" -o /dev/null --hist-output $outputdir"hist"$run_number".root"
-echo $grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"$run_number".bld" -o /dev/null --hist-output $outputdir"hist"$run_number".root" > $outputdir"online.cmd"
-$grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"${run_number}".bld" -o /dev/null --hist-output $outputdir"hist"$run_number".root"
+#echo $grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"$run_number".bld" -o /dev/null --hist-output $outputdir"hist"$run_number".root"
+#echo $grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"$run_number".bld" -o /dev/null --hist-output $outputdir"hist"$run_number".root" > $outputdir"online.cmd"
+echo $grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"$run_number".bld" -o /dev/null --hist-output /dev/null
+$grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"${run_number}".bld" -o /dev/null --hist-output /dev/null
