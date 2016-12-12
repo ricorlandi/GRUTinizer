@@ -55,8 +55,10 @@ private:
     std::vector<LaBrHit> labr_hits;
     Double_t madc1;
     Double_t madc2;
+    Double_t madc3;
     Double_t tpos1;
     Double_t tpos2;
+    Double_t tpos3;
     Long_t Timestamp;
     RCNPEvent rcnp;
     Double_t excitation_energy;

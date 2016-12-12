@@ -14,7 +14,8 @@ unsigned int TGrandRaidenHit::xdegree = 2, TGrandRaidenHit::adegree = 2, TGrandR
 
 
 TGrandRaidenHit::TGrandRaidenHit() {
-  madc1=0; madc2=0; tpos1=0; tpos2=0;
+  madc1=0; madc2=0; madc3=0;
+  tpos1=0; tpos2=0; tpos3=0;
   vector = nullptr;
   excitation_energy=0;
 }
@@ -22,14 +23,17 @@ TGrandRaidenHit::TGrandRaidenHit(const TGrandRaidenHit& gr) {
   labr_hits = gr.labr_hits;
   madc1 = gr.madc1;
   madc2 = gr.madc2;
+  madc3 = gr.madc3;
   tpos1 = gr.tpos1;
   tpos2 = gr.tpos2;
+  tpos3 = gr.tpos3;
   Timestamp = gr.Timestamp;
   rcnp = gr.rcnp;
 }
-TGrandRaidenHit::TGrandRaidenHit(RCNPEvent& rcnpevent) :
-  rcnp(rcnpevent) {
-  madc1=0; madc2=0; tpos1=0; tpos2=0;
+TGrandRaidenHit::TGrandRaidenHit(RCNPEvent& rcnpevent)
+  : rcnp(rcnpevent) {
+  madc1=0; madc2=0; madc3=0;
+  tpos1=0; tpos2=0; tpos3=0;
 }
 TGrandRaidenHit::~TGrandRaidenHit() {
 }
@@ -76,10 +80,12 @@ void TGrandRaidenHit::BuildFrom(){
   if (adc) {
     madc1 = TMath::Sqrt((*adc)[0]*(*adc)[1]);
     madc2 = TMath::Sqrt((*adc)[2]*(*adc)[3]);
+    madc3 = TMath::Sqrt((*adc)[4]*(*adc)[5]);
   }
   if (tdc) {
     tpos1 = TMath::Sqrt((*tdc)[0]*(*tdc)[1]);
     tpos2 = TMath::Sqrt((*tdc)[2]*(*tdc)[3]);
+    tpos3 = TMath::Sqrt((*tdc)[4]*(*tdc)[5]);
   }
 
 #endif
