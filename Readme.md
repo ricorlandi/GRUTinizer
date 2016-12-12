@@ -16,16 +16,6 @@ Note, you do not need to ```make clean``` unless except in rare instances. Make 
 
 
 
-
-
-## Add-on for the CAGRA+GR Campaign @ RCNP October 2016:
---
-
-Most of the things explained above are still valid, such as the different options (flags) and universal commands. However, the syntax for the unpacking is a bit different. Furthermore, the working directory is:
-
-It was supposed to be: /home/cagragr/ana/campaignOct2016/, BUT it turned out not to be :-D
-So the working directory is actually is: /home/cagragr/ana/jisaak/template_campaign
-
 Online CAGRA example for the E450 experiments:
 --
 ``` ./bin/grutinizer -Hmg lib/libRCNPhistos.so config/online.cal config/rcnp_constants.cal "data/cagra/E450/run_1044.gtd03_000_0109" data/gr/E450/run1044.bld -o /dev/null ```
