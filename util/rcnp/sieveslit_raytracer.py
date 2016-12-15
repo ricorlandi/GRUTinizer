@@ -28,6 +28,8 @@ class SieveSlitFit(object):
         self.A = []
         self.B = []
         self.x = []
+        self.exclusions = set()
+        self.excluded_holes = []
         self.parse(filepath)
         SieveSlitFit.degree_x = x
         SieveSlitFit.degree_a = a
@@ -40,6 +42,7 @@ class SieveSlitFit(object):
 
         drawing = False
         data = False
+        hole_count = 0
         for line in open(filepath):
             elements = line.split()
             if len(elements) == 0:
@@ -54,14 +57,24 @@ class SieveSlitFit(object):
             if 'Data' in line:
                 data = True
                 continue
+
+            if '!' in line:
+                # mark for exclusion
+                row = [float(k) for k in elements[:-1]]
+                self.exclusions.add(tuple(row))
+                if drawing:
+                    self.excluded_holes.append(hole_count)
+                    hole_count+=1
+                elements = elements[:-1]
+            row = [float(k) for k in elements]
+
+
             if drawing:
-                row = [float(k) for k in elements]
                 self.drawing_holes.append(row)
                 A.add(row[0])
                 B.add(row[1])
 
             if data:
-                row = [float(k) for k in elements]
                 self.data_holes.append(row)
                 x.add(row[0])
         self.drawing_holes = np.asarray(self.drawing_holes)
@@ -166,16 +179,44 @@ class SieveSlitFit(object):
         avals = []
         yvals = []
         Bvals = []
+        Avals = []
         for i,row in enumerate(self.data_holes):
+            if tuple(row) in self.exclusions:
+                continue
             xvals.append(row[0])
             avals.append(row[1])
             yvals.append(row[2])
+            Avals.append(self.A[i%5])
             Bvals.append(self.B[i%5])
-        return xvals,avals,yvals,Bvals
+        return np.asarray(xvals),np.asarray(avals),np.asarray(yvals),np.asarray(Bvals),np.asarray(Avals)
 
-    def global_fit(self):
-        xvals,avals,yvals,Bvals = self.prepare_global_fit_data()
+    def global_fit(self,initial_A_params=None):
+        xvals,avals,yvals,Bvals,Avals = self.prepare_global_fit_data()
         data = (xvals,avals,yvals)
+
+        prev_x =None
+        scatter_a = []
+        scatter_y = []
+        scatter_B = []
+        for i,x in enumerate(xvals):
+            if i==0:
+                prev_x = x
+            if x == prev_x:
+                scatter_a.append(avals[i])
+                scatter_y.append(yvals[i])
+                scatter_B.append(Bvals[i])
+            else:
+                prev_x = x
+                plt.scatter(scatter_a,scatter_y)
+                plt.show()
+                scatter_a = []
+                scatter_y = []
+                scatter_B = []
+                scatter_a.append(avals[i])
+                scatter_y.append(yvals[i])
+                scatter_B.append(Bvals[i])
+
+
         popt,pcov = curve_fit(bfit,data,Bvals,p0=[1]*(SieveSlitFit.degree_x+1)*(SieveSlitFit.degree_a+1)*(SieveSlitFit.degree_y+1))
         def local_b_fit(x,a,y):
             return bfit([x,a,y],*popt)
@@ -184,12 +225,33 @@ class SieveSlitFit(object):
             X=row[:3]
             #print X,bfit(X,*popt)
 
-        # now do fit for A (dispersive angle)
-        data = np.asarray(sorted(set([(x,avals[i],self.A[(i%20)/5]) for i,x in enumerate(xvals)])))
-        popt2,pcov2 = curve_fit(afit,(data[:,0],data[:,1]),data[:,2],p0=[1]*((SieveSlitFit.degree_x+1) + (SieveSlitFit.degree_a+1)))
+
+        holes = []
+        for i,x in enumerate(xvals):
+            holes.append([x,avals[i]])
+        prev_hole = None
+        counter = 0
+        reduced_holes = []
+        for i,hole in enumerate(holes):
+            if prev_hole == hole:
+                counter+=1
+            else:
+                prev_hole = hole
+                if counter >= 4:
+                    reduced_holes.append(hole)
+                counter = 1
+        data = np.asarray(reduced_holes)
+        Avals = Avals[:len(data[:,0])]
+
+
+        plt.scatter(data[:,0],data[:,1])
+        plt.show()
+
+        popt2,pcov2 = curve_fit(afit,(data[:,0],data[:,1]),Avals,p0=initial_A_params)
         def local_a_fit(x,a):
             return afit([x,a],*popt2)
         self.fit_a = local_a_fit
+
 
         print("A Fit parameters: ")
         #print()
@@ -214,20 +276,29 @@ class SieveSlitFit(object):
             #plt.show()
 
     def plot_global_fit(self):
-        for i,x in enumerate(self.x):
-            scatter_a = []
-            scatter_y = []
-            scatter_B = []
-            scatter_A = []
-            for row in self.data_holes:
-                if row[0] == x:
-                    scatter_B.append(self.fit_b(row[0],row[1],row[2]))
-                    scatter_A.append(self.fit_a(row[0],row[1]))
-                    #print ">>",row[0],row[1],row[2], self.fit_b(row[0],row[1],row[2]),self.fit_a(row[0],row[1])
+        scatter_a = []
+        scatter_y = []
+        scatter_B = []
+        scatter_A = []
 
-            #plt.scatter(scatter_a,scatter_y,marker='+')
-            plt.scatter(scatter_A,scatter_B,c='red')
-            #plt.show()
+
+        xvals,avals,yvals,Bvals,Avals = self.prepare_global_fit_data()
+        for i,x in enumerate(xvals):
+            a = avals[i]
+            y = yvals[i]
+            print x,a,y,self.fit_b(x,a,y),self.fit_a(x,a)
+            scatter_B.append(self.fit_b(x,a,y))
+            scatter_A.append(self.fit_a(x,a))
+
+        true_holes_a = []
+        true_holes_b = []
+        for b in Bvals:
+            for a in Avals:
+                true_holes_a.append(a)
+                true_holes_b.append(b)
+        plt.scatter(true_holes_a,true_holes_b,c='blue')
+        plt.scatter(scatter_A,scatter_B,c='red')
+        plt.show()
 
 
 def bfit(var,*c):
@@ -253,6 +324,6 @@ def afit(var,*c):
     for i in range(0,SieveSlitFit.degree_x+1):
         sum1 += c[i]*pow(x,i)
         counter = i
-    for i in range(0,SieveSlitFit.degree_a+1):
-        sum1 += c[i+counter+1]*pow(a,i)
+    for i in range(1,SieveSlitFit.degree_a+1):
+        sum1 += c[i+counter]*pow(a,i)
     return sum1
