@@ -13,10 +13,9 @@ std::vector<double> TGrandRaidenHit::bcoefs;
 unsigned int TGrandRaidenHit::xdegree = 2, TGrandRaidenHit::adegree = 2, TGrandRaidenHit::ydegree = 1;
 
 
-TGrandRaidenHit::TGrandRaidenHit() {
+TGrandRaidenHit::TGrandRaidenHit() : vector(1.,1.,1.) {
   madc1=0; madc2=0; madc3=0;
   tpos1=0; tpos2=0; tpos3=0;
-  vector = nullptr;
   excitation_energy=0;
 }
 TGrandRaidenHit::TGrandRaidenHit(const TGrandRaidenHit& gr) {
@@ -29,9 +28,10 @@ TGrandRaidenHit::TGrandRaidenHit(const TGrandRaidenHit& gr) {
   tpos3 = gr.tpos3;
   Timestamp = gr.Timestamp;
   rcnp = gr.rcnp;
+  vector = gr.vector;
 }
 TGrandRaidenHit::TGrandRaidenHit(RCNPEvent& rcnpevent)
-  : rcnp(rcnpevent) {
+  : rcnp(rcnpevent), vector(1.,1.,1.) {
   madc1=0; madc2=0; madc3=0;
   tpos1=0; tpos2=0; tpos3=0;
 }
@@ -99,20 +99,23 @@ void TGrandRaidenHit::SetRaytraceParams(std::vector<double> apar, std::vector<do
   bcoefs = std::move(bpar);
 }
 
+std::pair<double,double> TGrandRaidenHit::Raytrace() {
+  return raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));
+}
 TVector3 TGrandRaidenHit::GetEjectileVector() {
-  if (vector) { return *vector; }
 
   double thetax=0,thetay=0; // A,B
   std::tie(thetax,thetay) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));
+  thetax/=1000; // convert to radian from mrad
+  thetay/=1000; // convert to radian from mrad
   auto phi = TMath::ATan2(TMath::Sin(thetay),TMath::Sin(thetax));
   auto theta = TMath::ASin(TMath::Sqrt( TMath::Power(TMath::Sin(thetax),2) + TMath::Power(TMath::Sin(thetay),2) ));
 
-  vector = new TVector3(1.,1.,1.);
-  vector->SetTheta(theta);
-  vector->SetPhi(phi);
-  vector->SetMag(1); // probably unnecessary, but ROOT...
+  vector.SetTheta(theta);
+  vector.SetPhi(phi);
+  vector.SetMag(1); // probably unnecessary, but ROOT...
 
-  return *vector;
+  return vector;
 }
 
 
@@ -132,8 +135,8 @@ std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y)
     sum += acoefs[i]*pow(x,i);
     count = i;
   }
-  for (auto i=0u; i<=adegree; i++) {
-    sum += acoefs[i+count+1]*pow(a,i);
+  for (auto i=1u; i<=adegree; i++) {
+    sum += acoefs[i+count]*pow(a,i);
   }
   A=sum;
   sum=count=0;

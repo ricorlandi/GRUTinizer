@@ -32,11 +32,14 @@ class TGrandRaidenHit : public TDetectorHit {
     TVector3 GetEjectileVector();
     double GetExEnergy();
 
+    std::pair<double,double> Raytrace();
     const std::vector<LaBrHit>& GetLaBr() { return labr_hits; }
     const Double_t& GetMeanPlastE1() { return madc1; }
     const Double_t& GetMeanPlastE2() { return madc2; }
+    const Double_t& GetMeanPlastE3() { return madc3; }
     const Double_t& GetMeanPlastPos1() { return tpos1; }
     const Double_t& GetMeanPlastPos2() { return tpos2; }
+    const Double_t& GetMeanPlastPos3() { return tpos3; }
     const Long_t& GetTimestamp() { return Timestamp; }
     RCNPEvent& GR() { return rcnp; }
     static void SetRaytraceParams(std::vector<double> apar, std::vector<double> bpar,
@@ -69,7 +72,7 @@ private:
     static std::vector<double> acoefs; //!
     static std::vector<double> bcoefs; //!
 
-    TVector3* vector; //!
+    TVector3 vector;
 
 
     ClassDef(TGrandRaidenHit,1);

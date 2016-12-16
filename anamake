@@ -1,12 +1,12 @@
 inputfiles = inputfiles.dat
 data_dir = /np1a/cagra/gr/2016campaign
-rootfiles_subdir = rootfiles/E450
-histo_lib = ./lib/libLaBr3traces.so
+rootfiles_subdir = rootfiles/E441
+histo_lib = ./lib/libe441.so
 other_config_files = 
 grutinizer = ./bin/grutinizer
 detector_env =
-channels = ./config/online.cal
-values =  config/rcnp_constants.val
+channels = ./config/e441.cal
+values =  config/e441_c12.val
 cuts =
 
 # A few configuration options for make

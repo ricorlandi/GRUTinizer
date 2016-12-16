@@ -8,7 +8,7 @@
 extern "C"
 void MakeHistograms(TRuntimeObjects& obj) {
   LoadCuts();
-  LoadRaytraceParams();
+  LoadRaytraceParams(3,1,1);
 
   TCagra* cagra = obj.GetDetector<TCagra>();
   TGrandRaiden* gr = obj.GetDetector<TGrandRaiden>();
@@ -210,6 +210,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       obj.FillHistogram(dirname,"RF_Acor_Xcor[X]",1200,-600,600,rcnp.GR_X(0),500,0,0,rf_Acor_Xcor);
       obj.FillHistogram(dirname,"DE1[X]",1200,-600,600,rcnp.GR_X(0),2000,0,2000, hit.GetMeanPlastE1());
       obj.FillHistogram(dirname,"DE2[X]",1200,-600,600,rcnp.GR_X(0),2000,0,2000, hit.GetMeanPlastE2());
+      obj.FillHistogram(dirname,"DE3[X]",1200,-600,600,rcnp.GR_X(0),2000,0,2000, hit.GetMeanPlastE3());
 
       obj.FillHistogram(dirname,"Y[A]",300,-0.15,0.15,rcnp.GR_TH(0),200,-100,100,rcnp.GR_Y(0));
       obj.FillHistogram(dirname,"Y[B]",250,-0.1,0.1,rcnp.GR_PH(0),200,-100,100,rcnp.GR_Y(0));
@@ -231,17 +232,22 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
       obj.FillHistogram(dirname,"DE1[RF]",1000,0,0,rf,2000,0,2000, hit.GetMeanPlastE1());
       obj.FillHistogram(dirname,"DE2[RF]",1000,0,0,rf,2000,0,2000, hit.GetMeanPlastE2());
+      obj.FillHistogram(dirname,"DE3[RF]",1000,0,0,rf,2000,0,2000, hit.GetMeanPlastE3());
+      
       obj.FillHistogram(dirname,"DE1[RF_Acor_Xcor]",500,0,0,rf_Acor_Xcor,1000,0,2000, hit.GetMeanPlastE1());
       obj.FillHistogram(dirname,"DE2[RF_Acor_Xcor]",500,0,0,rf_Acor_Xcor,1000,0,2000, hit.GetMeanPlastE2());
       obj.FillHistogram(dirname,"DE1[dE2]",2000,0,2000, hit.GetMeanPlastE2(),2000,0,2000, hit.GetMeanPlastE1());
+      obj.FillHistogram(dirname,"DE2[DE3]",2000,0,2000, hit.GetMeanPlastE2(),2000,0,2000, hit.GetMeanPlastE3());
+      
       obj.FillHistogram(dirname,"dE1[A]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE1());
       obj.FillHistogram(dirname,"dE2[A]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE2());
+      obj.FillHistogram(dirname,"dE3[A]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE3());
 
 
       // raytracing
-      // double A=0,B=0;
-      // std::tie(A,B) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));
-      // obj.FillHistogram(dirname,"B[A]",500,0,0,A,500,0,0,B);
+      double A=0,B=0;
+      std::tie(A,B) = hit.Raytrace();
+      obj.FillHistogram(dirname,"B[A]",500,0,0,A,500,0,0,B);
 
       // for (auto& cut : xcuts) {
       //   if (x < cut+xwidth && x >= cut) {
@@ -256,7 +262,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
     if (rcnp.GR_ADC()) {
       auto& adc = *rcnp.GR_ADC();
-      for (int i=0; i<4; i++) {
+      for (int i=0; i<6; i++) {
         stream.str(""); stream << "GR_ADC" << i;
         obj.FillHistogram("GR",stream.str().c_str(), 1000,0,2000, adc[i]);
       }
@@ -331,10 +337,6 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
     }
 
     auto ycor = rcnp.GR_Y(0)+892.46*rcnp.GR_PH(0);
-    auto a_low = 0.00007835619*rcnp.GR_X(0) - 0.01;
-    auto a_mid_low = 0.00007835619*rcnp.GR_X(0) + 0.03;
-    auto a_mid_high = 0.00007835619*rcnp.GR_X(0) + 0.07;
-    auto a_high = 0.00007835619*rcnp.GR_X(0) + 0.11;
     auto a = rcnp.GR_TH(0);
 
 
@@ -370,15 +372,21 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 
       dirname = "ParticleGamma";
       auto Ecm = core_hit.GetDoppler(beta,pos::core_only);
+      auto Ecm_particle = core_hit.GetDoppler(beta,pos::core_only,hit.GetEjectileVector());
       auto Elab = core_hit.GetCorrectedEnergy();
 
-      obj.FillHistogram(dirname,"Ecm[Elab]",
+      obj.FillHistogram(dirname,"Ecm_particle[Elab]",
                         2500,0,10000,Elab,
-                        2500,0,10000,Ecm);
+                        2500,0,10000,Ecm_particle);
       obj.FillHistogram(dirname,"EdopplerSummary",
                         6000,-2000,22000,Ecm,
                         49,0,49,crystal_id);
       obj.FillHistogram(dirname,"EdopplerSum",7000,0,21000,Ecm);
+      obj.FillHistogram(dirname,"EdopplerParticleSummary",
+                        6000,-2000,22000,Ecm_particle,
+                        49,0,49,crystal_id);
+      obj.FillHistogram(dirname,"EdopplerParticleSum",7000,0,21000,Ecm_particle);
+
 
 
       if (ycor>12 && ycor<31) {
@@ -398,54 +406,69 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
         //stream.str(""); stream << "TimeDiff_" << detector << "_" << chan;
         obj.FillHistogram(dirname,stream.str().c_str(),1000,-500,1500,tdiff);
 
-        if (a > a_low && a <= a_mid_low) {
-          obj.FillHistogram(dirname+"_gates","A[X]_gateYcor_lowgateAX", 300,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
-          obj.FillHistogram(dirname+"_gates","Diff_CAGRA_GR_lowgateAX", 1000,-500,1500,cagratime-grtime);
-        } else if ( a > a_mid_low && a <= a_mid_high) {
-          obj.FillHistogram(dirname+"_gates","A[X]_gateYcor_midgateAX", 300,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
-          obj.FillHistogram(dirname+"_gates","Diff_CAGRA_GR_midgateAX", 1000,-500,1500,tdiff);
+        obj.FillHistogram(dirname+"_gates","A[X]_gateYcor_midgateAX", 300,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
+        obj.FillHistogram(dirname+"_gates","Diff_CAGRA_GR_midgateAX", 1000,-500,1500,tdiff);
 
-          // gate on prompt event timing peak
-          if (tdiff>=252 && tdiff<=280) {
-            int detector = core_hit.GetDetnum();
-            char core_leaf = core_hit.GetLeaf();
-            string chan = core_leaf + std::to_string(core_hit.GetSegnum());
-            size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+        // gate on prompt event timing peak
+        if (tdiff>=252 && tdiff<=260) {
+          int detector = core_hit.GetDetnum();
+          char core_leaf = core_hit.GetLeaf();
+          string chan = core_leaf + std::to_string(core_hit.GetSegnum());
+          size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
 
-            // cagra core energy summary
-            obj.FillHistogram("CrystalEnergySummaryPrompt",
-                              6000,-2000,22000,core_hit.GetCorrectedEnergy(),
-                              49,0,49,crystal_id);
+          // cagra core energy summary
+          obj.FillHistogram("CrystalEnergySummaryPrompt",
+                            6000,-2000,22000,core_hit.GetCorrectedEnergy(),
+                            49,0,49,crystal_id);
 
-            // cagra core energy summary vs. rcnp.GR_X(0)
-            obj.FillHistogram("CrystalEnergySummaryPrompt_vs_X",
+          // cagra core energy summary vs. rcnp.GR_X(0)
+          obj.FillHistogram("CrystalEnergySummaryPrompt_vs_X",
                             300,-600,600,rcnp.GR_X(0),
                             6000,-2000,22000,core_hit.GetCorrectedEnergy());
-            obj.FillHistogram("EgammaSumPrompt",7000,0,21000,core_hit.GetCorrectedEnergy());
+          obj.FillHistogram("EgammaSumPrompt",7000,0,21000,core_hit.GetCorrectedEnergy());
 
+          obj.FillHistogram(dirname,"EdopplerSummaryPrompt",
+                            6000,-2000,22000,Ecm,
+                            49,0,49,crystal_id);
+          obj.FillHistogram(dirname,"EdopplerSum",7000,0,21000,Ecm);
+          obj.FillHistogram(dirname,"EdopplerParticleSum",7000,0,21000,Ecm_particle);
+          obj.FillHistogram(dirname,"EdopplerParticleSummaryPrompt",
+                            6000,-2000,22000,Ecm_particle,
+                            49,0,49,crystal_id);
+          obj.FillHistogram(dirname,"EdopplerParticleSumPrompt",7000,0,21000,Ecm_particle);
+          // cagra core energy summary vs. rcnp.GR_X(0)
+          obj.FillHistogram("EdopplerParticle_vs_X",
+                            300,-600,600,rcnp.GR_X(0),
+                            6000,-2000,22000,Ecm_particle);
+          obj.FillHistogram("EgammaSumPrompt",7000,0,21000,core_hit.GetCorrectedEnergy());
+
+          if (rcnp.GR_X(0) > -370 && rcnp.GR_X(0) < -270) {
+            obj.FillHistogram("Doppler_15MeV","EdopplerSum",7000,0,21000,Ecm);
+            obj.FillHistogram("Doppler_15MeV","EdopplerParticleSum",7000,0,21000,Ecm_particle);
+            obj.FillHistogram("Doppler_15MeV","EdopplerParticleSummaryPrompt",
+                              6000,-2000,22000,Ecm_particle,
+                              49,0,49,crystal_id);
           }
 
-          // gate on random events side band of timing peak
-          if (tdiff>=212 && tdiff<=240) {
-            int detector = core_hit.GetDetnum();
-            char core_leaf = core_hit.GetLeaf();
-            string chan = core_leaf + std::to_string(core_hit.GetSegnum());
-            size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+        }
 
-            // cagra core energy summary
-            obj.FillHistogram("Summary","rand_CrystalEnergySummaryPrompt",
-                              6000,-2000,22000,core_hit.GetCorrectedEnergy(),
-                              49,0,49,crystal_id);
+        // gate on random events side band of timing peak
+        if (tdiff>=212 && tdiff<=240) {
+          int detector = core_hit.GetDetnum();
+          char core_leaf = core_hit.GetLeaf();
+          string chan = core_leaf + std::to_string(core_hit.GetSegnum());
+          size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
 
-            // cagra core energy summary vs. rcnp.GR_X(0)
-            obj.FillHistogram("Summary","rand_CrystalEnergySummaryPrompt_vs_X",
+          // cagra core energy summary
+          obj.FillHistogram("Summary","rand_CrystalEnergySummaryPrompt",
+                            6000,-2000,22000,core_hit.GetCorrectedEnergy(),
+                            49,0,49,crystal_id);
+
+          // cagra core energy summary vs. rcnp.GR_X(0)
+          obj.FillHistogram("Summary","rand_CrystalEnergySummaryPrompt_vs_X",
                             300,-600,600,rcnp.GR_X(0),
                             6000,-2000,22000,core_hit.GetCorrectedEnergy());
 
-          }
-        } else if (a > a_mid_high && a <=a_high) {
-          obj.FillHistogram(dirname+"_gates","A[X]_gateYcor_highgateAX",300,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
-          obj.FillHistogram(dirname+"_gates","Diff_CAGRA_GR_highgateAX", 1000,-500,1500,cagratime-grtime);
         }
       }
     } // end cagra analysis
@@ -454,29 +477,21 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
     for (auto const& labr_hit : hit.GetLaBr()) {
       int channum = labr_hit.channel;
       auto labr_rf = labr_hit.qtc_le-rf;
-      if (a > a_low && a <= a_mid_low) {
-        stream.str(""); stream << "LaBrLeading_lowgateAX";
-        obj.FillHistogram(dirname+"_gates", stream.str(), 10000,-40000, 40000, labr_hit.qtc_le);
-      } else if ( a > a_mid_low && a <= a_mid_high) {
-        stream.str(""); stream << "LaBrLeading_RF_midgateAX_" << channum;
-        obj.FillHistogram(dirname+"_gates", stream.str(), 1000, -25000, 35000, labr_rf);
-        //stream.str(""); stream << "LaBrLeading_RF_midgateAX_" << channum;
-        //obj.FillHistogram(dirname+"_gates", stream.str(), 1000, 0, 0, labr_rf);
-        if ((labr_rf>=-2300) && (labr_rf<=-1600)) {
-          stream.str(""); stream << "X_LaBrWidth_" << channum;
-          obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
-          stream.str(""); stream << "X_LaBrWidth_sum";
-          obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
-        }
-        if ((labr_hit.qtc_le>=-3000) && (labr_hit.qtc_le<=-2300)) {
-          stream.str(""); stream << "rand_X_LaBrWidth_" << channum;
-          obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
-          stream.str(""); stream << "rand_X_LaBrWidth_sum";
-          obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
-        }
-      }else if (a > a_mid_high && a <=a_high) {
-        stream.str(""); stream << "LaBrLeading_highgateAX";
-        obj.FillHistogram(dirname+"_gates", stream.str(), 10000,-40000, 40000, labr_hit.qtc_le);
+      stream.str(""); stream << "LaBrLeading_RF_midgateAX_" << channum;
+      obj.FillHistogram(dirname+"_gates", stream.str(), 1000, -25000, 35000, labr_rf);
+      //stream.str(""); stream << "LaBrLeading_RF_midgateAX_" << channum;
+      //obj.FillHistogram(dirname+"_gates", stream.str(), 1000, 0, 0, labr_rf);
+      if ((labr_rf>=-2300) && (labr_rf<=-1600)) {
+        stream.str(""); stream << "X_LaBrWidth_" << channum;
+        obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
+        stream.str(""); stream << "X_LaBrWidth_sum";
+        obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
+      }
+      if ((labr_hit.qtc_le>=-3000) && (labr_hit.qtc_le<=-2300)) {
+        stream.str(""); stream << "rand_X_LaBrWidth_" << channum;
+        obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
+        stream.str(""); stream << "rand_X_LaBrWidth_sum";
+        obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
       }
     } // end labr3 analysis
   }
@@ -503,32 +518,29 @@ void LoadRaytraceParams(size_t xdeg, size_t adeg, size_t ydeg) {
   // output from sieveslit.py
   TGrandRaidenHit::SetRaytraceParams(
     { // a fit parameters
-      25478959.64415743201971054,
-        -0.01771996157436579,
-        -0.00000375686641008,
-        -25478962.08887941017746925,
-        339.32639498225580610,
-        285.41500265652570079
+      -16.46324544230171227,
+        -0.02122094932284203,
+        -0.00000175692614590,
+        -0.00000000019248113,
+        355.31589759280973340
     },
     { // b fit parameters
-      -8.77979136468771948,
-        3.57167199982826045,
-        144.77038232928563843,
-        -102.62252113966886213,
-        -1669.00084319835968927,
-        1060.28866587772699859,
-        0.00281259943988080,
-        0.00390660581203093,
-        -0.57697427700803183,
-        -0.03624075884543333,
-        10.73431026156209711,
-        -0.86971847190018392,
-        0.00002737725798545,
-        -0.00000000249027871,
-        -0.00140344227013718,
-        0.00008863729153273,
-        0.01262661852581874,
-        -0.00031269175012557
+      -1.69063228313189517,
+        5.37742950170189715,
+        -41.03604322025192630,
+        -14.04205837959593950,
+        0.00859637765853833,
+        0.00173614493084734,
+        -0.23865171220755754,
+        0.04761148936398286,
+        0.00002267665926495,
+        -0.00001638172446673,
+        -0.00163527983664722,
+        0.00038621985050345,
+        0.00000000314766529,
+        -0.00000002363445651,
+        -0.00000167708819323,
+        0.00000058166479827
         },
     xdeg, // polynomial degree in fit for x
     adeg,

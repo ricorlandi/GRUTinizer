@@ -195,28 +195,28 @@ CLO16DN04 {
 
 CLO05AP00 { 
   Address: 0x01006D00
-EnergyCoeff: 2114.5299999999997 2.29372
+EnergyCoeff: 2047.52 2.29372
   PoleZero: 0.892
   System: Y
 }
 
 CLO05BP00 {
   Address: 0x01006D01
-EnergyCoeff: 2170.08 2.3395
+EnergyCoeff: 2100.45 2.3395
   PoleZero: 0.891
   System: Y
 }
 
 CLO05CP00 {
   Address: 0x01006D02
-EnergyCoeff: 2134.59 2.34342
+EnergyCoeff: 2075.14 2.34342
   PoleZero: 0.892
   System: Y
 }
 
 CLO05DP00 {
   Address: 0x01006D03
-EnergyCoeff: 2046.42 2.31141
+EnergyCoeff: 1991.91 2.31141
   PoleZero: 0.895
   System: Y
 }
@@ -257,7 +257,7 @@ CLO05LN03 {
 // (theta,phi)  (90,22.5) 
 CLO06AP00 {
   Address: 0x01006E00
-EnergyCoeff: 1883.96 1.91102
+EnergyCoeff: 1813.29 1.91102
   PoleZero: 0.885
   System: Y
 }
@@ -265,21 +265,21 @@ EnergyCoeff: 1883.96 1.91102
 // chan 8 because chan 1 on adapter is broken
 CLO06BP00 {
   Address: 0x01006E08
-EnergyCoeff: 2198.95 2.30321
+EnergyCoeff: 2103.72 2.30321
   PoleZero: 0.890
   System: Y
 }
 
 CLO06CP00 {
   Address: 0x01006E02
-EnergyCoeff: 2242.81 2.35612
+EnergyCoeff: 2152.36 2.35612
   PoleZero: 0.890
   System: Y
 }
 
 CLO06DP00 {
   Address: 0x01006E03
-EnergyCoeff: 2308.33 2.4548
+EnergyCoeff: 2232.08 2.4548
   PoleZero: 0.890
   System: Y
 }
@@ -320,28 +320,28 @@ CLO06LN03 {
 // (theta,phi)  (90,-22.5) 
 CLO07AP00 {
   Address: 0x01006F00
-EnergyCoeff: 1804.34 2.2903
+EnergyCoeff: 1734.41 2.2903
   PoleZero: 0.908
   System: Y
 }
 
 CLO07BP00 {
   Address: 0x01006F01
-EnergyCoeff: 1844.05 2.3533
+EnergyCoeff: 1757.33 2.3533
   PoleZero: 0.910
   System: Y
 }
 
 CLO07CP00 {
   Address: 0x01006F02
-EnergyCoeff: 1770.73 2.2646
+EnergyCoeff: 1689.29 2.2646
   PoleZero: 0.910
   System: Y
 }
 
 CLO07DP00 {
   Address: 0x01006F03
-EnergyCoeff: 1732.29 2.2434
+EnergyCoeff: 1667.85 2.2434
   PoleZero: 0.910
   System: Y
 }
@@ -380,28 +380,28 @@ CLO07LN03 {
 // (theta,phi)  (90,-67.5) 
 CLO08AP00 {
   Address: 0x01007000
-EnergyCoeff: 2048.73 2.2986
+EnergyCoeff: 1984.37 2.2986
   PoleZero: 0.895
   System: Y
 }
      
 CLO08BP00 {
   Address: 0x01007001
-EnergyCoeff: 1800.47 2.2825
+EnergyCoeff: 1729.87 2.2825
   PoleZero: 0.907
   System: Y
 }
 
 CLO08CP00 {
   Address: 0x01007002
-EnergyCoeff: 1862.96 2.3338
+EnergyCoeff: 1798.84 2.3338
   PoleZero: 0.907
   System: Y
 }
 
 CLO08DP00 {
   Address: 0x01007003
-EnergyCoeff: 1843.59 2.28227
+EnergyCoeff: 1784.11 2.28227
   PoleZero: 0.905
   System: Y
 }
@@ -440,28 +440,28 @@ CLO08LN03 {
 // (theta,phi)  (90,-112.5) 
 CLO09AP00 {
   Address: 0x01007100
-EnergyCoeff: 2052.56 2.3207
+EnergyCoeff: 1986.24 2.3207
   PoleZero: 0.896
   System: Y
 }
 
 CLO09BP00 {
   Address: 0x01007101
-EnergyCoeff: 2221.14 2.44544
+EnergyCoeff: 2160.49 2.44544
   PoleZero: 0.890
   System: Y
 }
 
 CLO09CP00 {
   Address: 0x01007102
-EnergyCoeff: 2282.21 2.4788
+EnergyCoeff: 2220.1  2.4788
   PoleZero: 0.890
   System: Y
 }
 
 CLO09DP00 {
   Address: 0x01007103
-EnergyCoeff: 2300.29 2.5240
+EnergyCoeff: 2233.8  2.5240
   PoleZero: 0.892
   System: Y
 }
@@ -563,28 +563,28 @@ CLO10DP00 {
 // (theta,phi)  (90,157.5) 
 CLO11AP00 {
   Address: 0x01007300
-  EnergyCoeff: 2135.5 2.35805
+  EnergyCoeff: 2055.69 2.35805
   PoleZero: 0.894
   System: Y
 }
 
 CLO11BP00 {
   Address: 0x01007301
-  EnergyCoeff: 2182.91 2.4309
+  EnergyCoeff: 2117.01 2.4309
   PoleZero: 0.894
   System: Y
 }
 
 CLO11CP00 {
   Address: 0x01007302
-  EnergyCoeff: 2221.91 2.44058
+  EnergyCoeff: 2158.18 2.44058
   PoleZero: 0.8935
   System: Y
 }
 
 CLO11DP00 {
   Address: 0x01007303
-  EnergyCoeff: 2120.66 2.31172
+  EnergyCoeff: 2042.01 2.31172
   PoleZero: 0.893
   System: Y
 }
@@ -623,28 +623,28 @@ CLO11LN03 {
 // (theta,phi)  (90,112.5)
 CLO12AP00 {
   Address: 0x01007400
-  EnergyCoeff: 1843.21 2.30115
+  EnergyCoeff: 1761.95 2.30115
   PoleZero: 0.908
   System: Y
 }
 
 CLO12BP00 {
   Address: 0x01007401
-  EnergyCoeff: 1786.97 2.27289
+  EnergyCoeff: 1716.6  2.27289
   PoleZero: 0.908
   System: Y
 }
 
 CLO12CP00 {
   Address: 0x01007402
-  EnergyCoeff: 1813.64 2.29441
+  EnergyCoeff: 1739.84 2.29441
   PoleZero: 0.908
   System: Y
 }
 
 CLO12DP00 {
   Address: 0x01007403
-  EnergyCoeff: 1810.44 2.26462
+  EnergyCoeff: 1726.97 2.26462
   PoleZero: 0.908
   System: Y
 }
@@ -689,14 +689,14 @@ CLO12LN03 {
 // (theta,phi)  (135,45) 
 CLO13AP00 {
   Address: 0x01007500
-  EnergyCoeff: 1708.29 2.22
+  EnergyCoeff: 1652.92 2.22
   PoleZero: 0.91
   System: Y
 }
 
 CLO13BP00 {
   Address: 0x01007501
-  EnergyCoeff: 1708.23 2.21996
+  EnergyCoeff: 1650.19 2.21996
   PoleZero: 0.91
   System: Y
 }
@@ -704,14 +704,14 @@ CLO13BP00 {
 // no signal
 CLO13CP00 {
   Address: 0x01007502
-  EnergyCoeff: 1711.23 2.23093
+  EnergyCoeff: 1655.68 2.23093
   PoleZero: 0.91
   System: Y
 }
 
 CLO13DP00 {
   Address: 0x01007503
-  EnergyCoeff: 1786.05 2.31859
+  EnergyCoeff: 1730.53 2.31859
   PoleZero: 0.91
   System: Y
 }
@@ -731,28 +731,28 @@ BGO13XP00 {
 // (theta,phi)  (135,-45) 
 CLO14AP00 {
   Address: 0x01007600
-  EnergyCoeff: 1745.55 2.21966
+  EnergyCoeff: 1684.15 2.21966
   PoleZero: 0.907
   System: Y
 }
 
 CLO14BP00 {
   Address: 0x01007601
-  EnergyCoeff: 1794.98 2.27522
+  EnergyCoeff: 1733.19 2.27522
   PoleZero: 0.907
   System: Y
 }
 
 CLO14CP00 {
   Address: 0x01007602
-  EnergyCoeff: 1759.6 2.23597
+  EnergyCoeff: 1702.76 2.23597
   PoleZero: 0.907
   System: Y
 }
 
 CLO14DP00 {
   Address: 0x01007603
-  EnergyCoeff: 1770.55 2.23955
+  EnergyCoeff: 1713.4  2.23955
   PoleZero: 0.907
   System: Y
 }
@@ -774,28 +774,28 @@ BGO14XP00 {
 // central contact
 CLO15AP00 {
   Address: 0x01007700
-  EnergyCoeff: 1798.65 2.2953
+  EnergyCoeff: 1707.1  2.2953
   PoleZero: 0.910
   System: I
 }
 // central contact
 CLO15BP00 {
   Address: 0x01007701
-  EnergyCoeff: 1843.51 2.35133
+  EnergyCoeff: 1743.51 2.35133
   PoleZero: 0.910
   System: I
 }
 // central contact
 CLO15CP00 {
   Address: 0x01007702
-  EnergyCoeff: 1833.63 2.33984
+  EnergyCoeff: 1742.53 2.33984
   PoleZero: 0.910
   System: I
 }
 // central contact
 CLO15DP00 {
   Address: 0x01007703
-  EnergyCoeff: 1884.96 2.43535
+  EnergyCoeff: 1782.56 2.43535
   PoleZero: 0.910
   System: I
 }
@@ -851,28 +851,29 @@ CLO15BN02 {
 // central contact
 CLO16AP00 {
   Address: 0x01007800
-  EnergyCoeff: 2363.45 2.38558
+  //EnergyCoeff: 1800.54 1.54634
+  EnergyCoeff: 1328.42 1.54634
   PoleZero: 0.91
   System: I
 }
 // central contact
 CLO16BP00 {
   Address: 0x01007801
-  EnergyCoeff: 1807.79 2.30723
+  EnergyCoeff: 1715.03 2.30723
   PoleZero: 0.910
   System: I
 }
 // central contact
 CLO16CP00 {
   Address: 0x01007802
-  EnergyCoeff: 1793.06 2.29903
+  EnergyCoeff: 1704.49 2.29903
   PoleZero: 0.910
   System: I
 }
 // central contact
 CLO16DP00 {
   Address: 0x01007803
-  EnergyCoeff: 1891.58 2.36308
+  EnergyCoeff: 1795.47 2.36308
   PoleZero: 0.907
   System: I
 }
