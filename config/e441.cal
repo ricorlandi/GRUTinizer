@@ -36,6 +36,26 @@
 // --------------------------------------------------------------------------------
 
 
+//------------------------- LaBr3 calibrations from GR DAQ ------------------------
+
+LAB01XP00 {
+  Address: 0x02000000
+  EnergyCoeff: 0 2
+}
+LAB02XP00 {
+  Address: 0x02000003
+  EnergyCoeff: 0 1
+}
+LAB03XP00 {
+  Address: 0x02000008
+  EnergyCoeff: 0 1
+}
+LAB04XP00 {
+  Address: 0x0200000E
+  EnergyCoeff: 0 1
+}
+
+
 //---------------------------  Digitizer 101 (0x65) for Clover in Slot 15 (side channels) ---------------------------
 
 
