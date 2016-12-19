@@ -18,6 +18,7 @@
 #include "TANLEvent.h"
 #include "GValue.h"
 #include "TNucleus.h"
+#include <tuple>
 
 #define BAD_NUM -441441
 #define PRINT(x) std::cout << #x" = " << x << std::endl
@@ -40,6 +41,15 @@ static TNucleus mg24("24Mg");
 static TNucleus fe56("56Fe");
 static TNucleus nb93("93Nb");
 static TNucleus sn124("124Sn");
+
+static const double ke_projectile = 600.; // MeV
+static const double m_projectile = li6.GetMass();
+static const double e_projectile = m_projectile + ke_projectile;
+static const double p_projectile = TMath::Sqrt(e_projectile*e_projectile-m_projectile*m_projectile);
+static const double beta = p_projectile/e_projectile;
+//static const double m_target = c12.GetMass();
+
+
 //static TNucleus li6ex(3,3,li6.GetMass()+Li6Ex,"6Li*");
 
 ///=============Two Body Kinematics===========
@@ -48,7 +58,7 @@ double omega(double x, double y, double z){
   return sqrt(x*x + y*y + z*z -2*x*y -2*y*z -2*x*z);
 }
 
-double *kine_2b(double m1, double m2, double m3, double m4, double K_proj, double thetalab, double K_eject){
+std::tuple<double,double,double> kine_2b(double m1, double m2, double m3, double m4, double K_proj, double thetalab, double K_eject){
   // m1(projectile) - m2(target) - m3(ejectile) - and m4(recoil)
 
   double Et1 = K_proj + m1;
@@ -79,13 +89,7 @@ double *kine_2b(double m1, double m2, double m3, double m4, double K_proj, doubl
 
   J_LtoCM = abs( ((omega(s,pow(m1,2),pow(m2,2))*omega(s,pow(m3,2),pow(m4,2)))/(4*s*p1*p3))*(1.+Et1/m2 - cos(thetalab)*(Et3*p1)/(m2*p3)) );
 
-
-  static double output[3];
-  output[0]= theta_cm;
-  output[1]= Ex;
-  output[2]= J_LtoCM;
-  return output;
-
+  return std::tuple<double,double,double>(theta_cm,Ex,J_LtoCM);
 }
 ///=============Brho to Kinetic energy transform===========
 double BrhoToTKE(double  brho, double  mass, double Z) {
@@ -129,7 +133,6 @@ std::pair<double,double> VectorStats(const std::vector<short int>& vec) {
 void DrawAverageTrace(TCagraHit& core_hit) {
 // Average trace analysis
   //////////////////
-  static int counter=0;
   static std::vector<std::vector<short int>> traces;
   auto trace = core_hit.GetSanitizedTrace();
   if(trace->size() > 50) {

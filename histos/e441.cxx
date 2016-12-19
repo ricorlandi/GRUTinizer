@@ -1,6 +1,8 @@
 #include "TRuntimeObjects.h"
 #include "e441.h"
 
+static const double m_target = mg24.GetMass();
+
 // ----------------------------------------------------------------------
 // extern "C" is needed to prevent name mangling.
 // The function signature must be exactly as shown here,
@@ -55,17 +57,13 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
   obj.FillHistogram(local_dirname, stream.str(),3000,-2000,4000,core_hit.GetCorrectedEnergy(),1250,6000,8500,prerise);
 
 
-
-  stream.str(""); stream << "E_pzcor_basesample" << detector << "_" << chan;
-  obj.FillHistogram(local_dirname,stream.str(),4000,0,0,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
-
   stream.str(""); stream << "E_pzcor_constant" << detector << "_" << chan;
   auto pzchan = core_hit.GetCorrectedEnergy();
-  obj.FillHistogram(local_dirname,stream.str(),4000,0,0,pzchan);
+  obj.FillHistogram(local_dirname,stream.str(),4000,0,12000,pzchan);
   for (auto& seg_hit : core_hit) {
     string seg_chan = seg_hit.GetLeaf() + std::to_string(seg_hit.GetSegnum());
     stream.str(""); stream << "E_pzcor_constant" << detector << "_" << seg_chan;
-    obj.FillHistogram(local_dirname,stream.str(),4000,0,0,seg_hit.GetCorrectedEnergy());
+    obj.FillHistogram(local_dirname,stream.str(),4000,0,12000,seg_hit.GetCorrectedEnergy());
   }
 
 }
@@ -127,6 +125,12 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
     // central contact signals
     // name = "Det_" + std::to_string(detector) + "_" + chan;
     // obj.FillHistogram("CAGRA_Raw", name,2000,0,0,core_hit.GetCharge());
+
+    if (core_hit.GetChannel() == 4 && core_hit.GetSystem()=='Y') {
+      name = "BGO_" + std::to_string(detector) + "_" + chan;
+      obj.FillHistogram("BGO", name,2000,0,0,core_hit.GetCharge());
+    }
+
 
     // // segment (side channel) signals
     // for (auto& segment : core_hit) {
@@ -257,6 +261,80 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       // }
 
 
+      auto ejectile = hit.GetEjectileVector();
+      // missing mass
+      ejectile.SetMag(hit.GetMomentum());
+      obj.FillHistogram("MissingMass","ThetaLab",300,0,0,ejectile.Theta());
+      obj.FillHistogram("MissingMass","PhiLab",300,0,0,ejectile.Phi());
+      if (ejectile.Theta() < 0.01) {
+        obj.FillHistogram("MissingMass","PhiLab_10mrad",300,0,0,ejectile.Phi());
+      }
+      auto p_ejectile = ejectile.Mag();
+      auto e_ejectile = TMath::Sqrt(p_ejectile*p_ejectile+m_projectile*m_projectile);
+      auto ke_ejectile = e_ejectile - m_projectile;
+      double theta_cm=0,Ex=0,J_L=0;
+
+      std::tie(theta_cm,Ex,J_L) = kine_2b(m_projectile,m_target,m_projectile,m_target,ke_projectile,ejectile.Theta(), ke_ejectile);
+
+
+      obj.FillHistogram("MissingMass","ThetaCM",300,0,0,theta_cm);
+      obj.FillHistogram("MissingMass","ReconstructedEx",1024,0,0,Ex);
+      if (ejectile.Theta() < 0.01) {
+        obj.FillHistogram("MissingMass","ReconstructedEx_0_10_mrad",1024,0,0,Ex);
+      }
+      obj.FillHistogram("MissingMass","KE_ejectile",1024,0,0,ke_ejectile);
+
+      obj.FillHistogram("MissingMass","KE_projectile",1024,0,0,ke_projectile);
+      obj.FillHistogram("MissingMass","ejectile_theta",1000,-.1,.1,ejectile.Theta());
+
+
+      // LaBr3 prompt analysis
+      dirname = "LaBr3_prompt";
+      for (auto const& labr_hit : hit.GetLaBr()) {
+        int channum = labr_hit.channel;
+        if ((labr_hit.qtc_le >= -3000) && (labr_hit.qtc_le <= -2000)) { // prompt
+          stream.str(""); stream << "X_LaBrWidth_" << channum;
+          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
+          stream.str(""); stream << "X_LaBrWidth_sum";
+          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
+
+          // old
+          obj.FillHistogram(dirname,"GR_X",1200,-600,600, rcnp.GR_X(0));
+          obj.FillHistogram(dirname,"GR_Y",200,-100,100, rcnp.GR_Y(0));
+          obj.FillHistogram(dirname,"GR_Theta",100,-1,1, rcnp.GR_TH(0));
+          obj.FillHistogram(dirname,"GR_Phi",100,-1,1, rcnp.GR_PH(0));
+          obj.FillHistogram(dirname,"X_TH",1200,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
+
+          obj.FillHistogram(dirname,"GR_Theta_Phi",100,-1,1, rcnp.GR_TH(0),100,-1,1, rcnp.GR_PH(0));
+          obj.FillHistogram(dirname,"GR_X_Y",1200,-600,600, rcnp.GR_X(0),200,-100,100, rcnp.GR_Y(0));
+
+
+          stream.str(""); stream << "LaBrWidth_LEGate" << channum;
+          obj.FillHistogram(dirname,stream.str(), 10000, -5000, 15000, labr_hit.width);
+
+          stream.str(""); stream << "X_LaBrWidth" << channum;
+          obj.FillHistogram(dirname,stream.str(),1200,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
+
+
+        }
+        else if ((labr_hit.qtc_le >= -4000) && (labr_hit.qtc_le <= -3000)) { // random
+          stream.str(""); stream << "rand_X_LaBrWidth_" << channum;
+          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
+          stream.str(""); stream << "rand_X_LaBrWidth_sum";
+          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
+        }
+
+        stream.str(""); stream << "LaBrLeading" << channum;
+        obj.FillHistogram("GR", stream.str(), 10000,-40000, 40000, labr_hit.qtc_le);
+
+        stream.str(""); stream << "LaBr" << channum << "_LE[LaBr_width]";
+        obj.FillHistogram("GR", stream.str(), 1000, -5000, 15000, labr_hit.width, 1000,-40000, 40000, labr_hit.qtc_le);
+
+
+        stream.str(""); stream << "LaBrWidth" << channum;
+        obj.FillHistogram("GR", stream.str(), 10000, -5000, 15000, labr_hit.width);
+      } // end labr3 analysis
+
 
     } // end rayid == 0 (good reconstruction)
 
@@ -269,48 +347,9 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
     }
 
 
-    for (auto const& labr_hit : hit.GetLaBr()) {
-
-      int channum = labr_hit.channel;
-      stream.str(""); stream << "LaBrLeading" << channum;
-      obj.FillHistogram("GR", stream.str(), 10000,-40000, 40000, labr_hit.qtc_le);
-
-      stream.str(""); stream << "LaBr" << channum << "_LE[LaBr_width]";
-      obj.FillHistogram("GR", stream.str(), 1000, -5000, 15000, labr_hit.width, 1000,-40000, 40000, labr_hit.qtc_le);
 
 
-      stream.str(""); stream << "LaBrWidth" << channum;
-      obj.FillHistogram("GR", stream.str(), 10000, -5000, 15000, labr_hit.width);
 
-      if (rcnp.GR_X(0) != BAD_NUM) {
-        obj.FillHistogram("GR","X_LaBr",1200,-600,600,rcnp.GR_X(0),10000,-5000,15000,labr_hit.width);
-      }
-
-      /* !!!!!!!!! cut on prompt timing peak */ // Needs to be updated for e441 !!!!!!!!!!!
-      if ((labr_hit.qtc_le>=-4000) && (labr_hit.qtc_le<=-3000)) {
-
-        obj.FillHistogram("GR_Prompt","RayID",64,-16,48, rcnp.GR_RAYID(0));
-        if (rcnp.GR_RAYID(0) == 0) { // if track reconstruction successfull
-          obj.FillHistogram("GR_Prompt","GR_X",1200,-600,600, rcnp.GR_X(0));
-          obj.FillHistogram("GR_Prompt","GR_Y",200,-100,100, rcnp.GR_Y(0));
-          obj.FillHistogram("GR_Prompt","GR_Theta",100,-1,1, rcnp.GR_TH(0));
-          obj.FillHistogram("GR_Prompt","GR_Phi",100,-1,1, rcnp.GR_PH(0));
-          obj.FillHistogram("GR_Prompt","X_TH",1200,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
-
-          obj.FillHistogram("GR_Prompt","GR_Theta_Phi",100,-1,1, rcnp.GR_TH(0),100,-1,1, rcnp.GR_PH(0));
-          obj.FillHistogram("GR_Prompt","GR_X_Y",1200,-600,600, rcnp.GR_X(0),200,-100,100, rcnp.GR_Y(0));
-
-        }
-
-        stream.str(""); stream << "LaBrWidth_LEGate" << channum;
-        obj.FillHistogram("GR_Prompt",stream.str(), 10000, -5000, 15000, labr_hit.width);
-
-        stream.str(""); stream << "X_LaBrWidth" << channum;
-        obj.FillHistogram("GR_Prompt",stream.str(),1200,-600,600,rcnp.GR_X(0),10000,-5000,15000,labr_hit.width);
-
-      }
-
-    }
 
 
   }
@@ -323,10 +362,15 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
   for (auto& hit : gr) {
 
     auto& rcnp = hit.GR();
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    if (rcnp.GR_RAYID(0) != 0) { return; } // HARD CUT TO ONLY TAKE EVENTS WHICH HAD A GOOD GR RECONSTRUCTION !!!!!//
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     auto grtime = hit.GetTimestamp();
     auto rf = rcnp.GR_RF(0);
     auto x = rcnp.GR_X(0);
-    auto Ex = x*0.01074+6.872; // calibrated for 12C @ commissioning on 04.10.16
+    //auto Ex = x*0.01074+6.872; // calibrated for 12C @ commissioning on 04.10.16
 
     // coincidence rate
     static ULong_t first_timestamp = grtime;
@@ -337,8 +381,7 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
     }
 
     auto ycor = rcnp.GR_Y(0)+892.46*rcnp.GR_PH(0);
-    auto a = rcnp.GR_TH(0);
-
+//    auto a = rcnp.GR_TH(0);
 
 
     // coincidence time difference
@@ -348,6 +391,7 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
       char core_leaf = core_hit.GetLeaf();
       string chan = core_leaf + std::to_string(core_hit.GetSegnum());
       size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+      bool bgo_hit = false;
 
       auto cagratime = core_hit.Timestamp();
       auto tdiff = cagratime-grtime;
@@ -364,15 +408,11 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 
 
       // doppler reconstruction
-      static const double ke_projectile = 600.; // MeV
-      static const double m_projectile = li6.GetMass();
-      static const double e_projectile = m_projectile + ke_projectile;
-      static const double p_projectile = TMath::Sqrt(e_projectile*e_projectile-m_projectile*m_projectile);
-      static const double beta = p_projectile/e_projectile;
 
       dirname = "ParticleGamma";
       auto Ecm = core_hit.GetDoppler(beta,pos::core_only);
-      auto Ecm_particle = core_hit.GetDoppler(beta,pos::core_only,hit.GetEjectileVector());
+      auto ejectile = hit.GetEjectileVector();
+      auto Ecm_particle = core_hit.GetDoppler(beta,pos::core_only,ejectile);
       auto Elab = core_hit.GetCorrectedEnergy();
 
       obj.FillHistogram(dirname,"Ecm_particle[Elab]",
@@ -388,19 +428,10 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
       obj.FillHistogram(dirname,"EdopplerParticleSum",7000,0,21000,Ecm_particle);
 
 
-
-      if (ycor>12 && ycor<31) {
-        dirname = "PG_random";
-        obj.FillHistogram(dirname,"Diff_CAGRA_GR", 1000,-500,1500,cagratime-grtime);
-        obj.FillHistogram(dirname,"A[X]_gateYcor",1200,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
-        //stream.str(""); stream << "TimeDiff_" << detector << "_" << chan;
-        obj.FillHistogram(dirname,stream.str().c_str(),1000,-500,1500,tdiff);
-      }
-
       obj.FillHistogram(dirname,"Y[B]cor",250,-0.1,0.1,rcnp.GR_PH(0),200,-100,100,ycor);
       //obj.FillHistogram(dirname,"Y[B]cor",250,-0.1,0.1,rcnp.GR_PH(0),200,-100,100,ycor);
 
-      if (ycor<11 && ycor >-8) {
+      if (ycor<11 && ycor >-8) { // maybe not needed
         obj.FillHistogram(dirname,"Diff_CAGRA_GR", 1000,-500,1500,cagratime-grtime);
         obj.FillHistogram(dirname,"A[X]_gateYcor",1200,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
         //stream.str(""); stream << "TimeDiff_" << detector << "_" << chan;
@@ -440,6 +471,38 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
           obj.FillHistogram("EdopplerParticle_vs_X",
                             300,-600,600,rcnp.GR_X(0),
                             6000,-2000,22000,Ecm_particle);
+
+          for (auto& cagra_hit : cagra) {
+            if (cagra_hit.GetDetnum() == detector && cagra_hit.GetSystem() == 'Y' && cagra_hit.GetChannel() == 4) {
+              auto bgotdiff = core_hit.Timestamp() - cagra_hit.Timestamp();
+              obj.FillHistogram(dirname,"BGOTime_diff",5000,0,0, bgotdiff);
+              if (bgotdiff < 10 && bgotdiff > -10) {
+                bgo_hit = true;
+                break;
+                //obj.FillHistogram(dirname,"BGOTime_diff_accepted",1000,0,0,bgotdiff);
+              }
+
+            }
+          }
+
+          if (core_hit.GetSystem()=='Y') {
+            if (bgo_hit) {
+              obj.FillHistogram(dirname,"BGO_counts",10,0,10,3);
+            } else {
+              obj.FillHistogram(dirname,"BGO_counts",10,0,10,7);
+              obj.FillHistogram("EdopplerParticleBGOveto_vs_X",
+                                300,-600,600,rcnp.GR_X(0),
+                                6000,-2000,22000,Ecm_particle);
+              obj.FillHistogram(dirname,"EdopplerParticleSumBGOveto",7000,0,21000,Ecm_particle);
+            }
+          }
+
+
+
+
+          bgo_hit = false;
+
+
           obj.FillHistogram("EgammaSumPrompt",7000,0,21000,core_hit.GetCorrectedEnergy());
 
           if (rcnp.GR_X(0) > -370 && rcnp.GR_X(0) < -270) {
@@ -449,6 +512,47 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
                               6000,-2000,22000,Ecm_particle,
                               49,0,49,crystal_id);
           }
+
+
+          //obj.FillHistogram(dirname,"Momentum",1000,2500,2700,hit.GetMomentum());
+          obj.FillHistogram(dirname,"Momentum",1000,2400,2800,hit.GetMomentum());
+          auto p_gamma = core_hit.GetMomentumVector(pos::core_only);
+          auto p_invariant = hit.ReconstructInvariant(p_gamma);
+          auto m_invariant = m_projectile + Li6Ex;
+          auto e_invariant = TMath::Sqrt(p_invariant.Mag()*p_invariant.Mag() + m_invariant*m_invariant);
+          auto ke_invariant = e_invariant - m_invariant;
+          obj.FillHistogram(dirname,"KE_invariant",1024,500,600,ke_invariant);
+          obj.FillHistogram(dirname,"p_invariant",1024,2400,2800,p_invariant.Mag());
+
+          double theta_cm=0,Ex=0,J_L=0;
+          std::tie(theta_cm,Ex,J_L) = kine_2b(m_projectile,m_target,m_invariant,m_target,ke_projectile,p_invariant.Theta(), ke_invariant);
+
+          if (Ecm_particle>=3400 && Ecm_particle<=3800) {
+            obj.FillHistogram("6LiEx_gate","ThetaCM",300,0,0.15,theta_cm);
+            obj.FillHistogram("6LiEx_gate","ReconstructedEx",200,0,100,Ex);
+            if (ejectile.Theta() < 0.01) {
+              obj.FillHistogram("6LiEx_gate","ReconstructedEx_0_10_mrad",200,0,100,Ex);
+            }
+            obj.FillHistogram("6LiEx_gate","KE_projectile",200,500,600,ke_projectile);
+            obj.FillHistogram("6LiEx_gate","ejectile_theta",1000,-.1,.1,ejectile.Theta());
+          } else if (Ecm_particle>=3900 && Ecm_particle <=4300) {
+            obj.FillHistogram("6LiEx_sideband","ThetaCM",300,0,0.15,theta_cm);
+            obj.FillHistogram("6LiEx_sideband","ReconstructedEx",200,0,100,Ex);
+            if (ejectile.Theta() < 0.01) {
+              obj.FillHistogram("6LiEx_sideband","ReconstructedEx_0_10_mrad",200,0,100,Ex);
+            }
+            obj.FillHistogram("6LiEx_sideband","KE_projectile",1024,500,600,ke_projectile);
+            obj.FillHistogram("6LiEx_sideband","ejectile_theta",1000,-.1,.1,ejectile.Theta());
+          }
+          obj.FillHistogram("InvariantMissingMass","ThetaCM",300,0,0.15,theta_cm);
+          obj.FillHistogram("InvariantMissingMass","ReconstructedEx",200,0,100,Ex);
+          if (ejectile.Theta() < 0.01) {
+            obj.FillHistogram("InvariantMissingMass","ReconstructedEx_0_10_mrad",200,0,100,Ex);
+          }
+          obj.FillHistogram("InvariantMissingMass","KE_projectile",1024,500,600,ke_projectile);
+
+
+
 
         }
 
@@ -472,28 +576,6 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
         }
       }
     } // end cagra analysis
-
-    // LaBr3 prompt analysis
-    for (auto const& labr_hit : hit.GetLaBr()) {
-      int channum = labr_hit.channel;
-      auto labr_rf = labr_hit.qtc_le-rf;
-      stream.str(""); stream << "LaBrLeading_RF_midgateAX_" << channum;
-      obj.FillHistogram(dirname+"_gates", stream.str(), 1000, -25000, 35000, labr_rf);
-      //stream.str(""); stream << "LaBrLeading_RF_midgateAX_" << channum;
-      //obj.FillHistogram(dirname+"_gates", stream.str(), 1000, 0, 0, labr_rf);
-      if ((labr_rf>=-2300) && (labr_rf<=-1600)) {
-        stream.str(""); stream << "X_LaBrWidth_" << channum;
-        obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
-        stream.str(""); stream << "X_LaBrWidth_sum";
-        obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
-      }
-      if ((labr_hit.qtc_le>=-3000) && (labr_hit.qtc_le<=-2300)) {
-        stream.str(""); stream << "rand_X_LaBrWidth_" << channum;
-        obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
-        stream.str(""); stream << "rand_X_LaBrWidth_sum";
-        obj.FillHistogram(dirname+"_gates", stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.width);
-      }
-    } // end labr3 analysis
   }
 }
 

@@ -154,6 +154,12 @@ int TCagraHit::GetMainSegnum() const {
   return output;
 }
 
+TVector3 TCagraHit::GetMomentumVector(pos opt, bool apply_array_offset){
+  auto gamma = GetPosition(opt,apply_array_offset);
+  gamma.SetMag(GetCorrectedEnergy()/1000);
+  return gamma;
+}
+
 TVector3 TCagraHit::GetPosition(pos opt, bool apply_array_offset) const {
   TChannel* chan = TChannel::GetChannel(fAddress);
   auto clover_type = *chan->GetSystem();

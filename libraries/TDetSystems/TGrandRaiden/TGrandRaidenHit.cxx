@@ -17,6 +17,7 @@ TGrandRaidenHit::TGrandRaidenHit() : vector(1.,1.,1.) {
   madc1=0; madc2=0; madc3=0;
   tpos1=0; tpos2=0; tpos3=0;
   excitation_energy=0;
+  momentum=0;
 }
 TGrandRaidenHit::TGrandRaidenHit(const TGrandRaidenHit& gr) {
   labr_hits = gr.labr_hits;
@@ -29,11 +30,15 @@ TGrandRaidenHit::TGrandRaidenHit(const TGrandRaidenHit& gr) {
   Timestamp = gr.Timestamp;
   rcnp = gr.rcnp;
   vector = gr.vector;
+  excitation_energy=gr.excitation_energy;
+  momentum=gr.momentum;
 }
 TGrandRaidenHit::TGrandRaidenHit(RCNPEvent& rcnpevent)
   : rcnp(rcnpevent), vector(1.,1.,1.) {
   madc1=0; madc2=0; madc3=0;
   tpos1=0; tpos2=0; tpos3=0;
+  excitation_energy=0;
+  momentum=0;
 }
 TGrandRaidenHit::~TGrandRaidenHit() {
 }
@@ -119,10 +124,16 @@ TVector3 TGrandRaidenHit::GetEjectileVector() {
 }
 
 
-double TGrandRaidenHit::GetExEnergy() {
-  if (excitation_energy) { return excitation_energy; }
-  excitation_energy = GValue::Value("GrandRaiden_Slope")*rcnp.GR_X(0) + GValue::Value("GrandRaiden_Offset");
-  return excitation_energy;
+TVector3 TGrandRaidenHit::ReconstructInvariant(const TVector3& gamma) {
+  auto ejectile = GetEjectileVector();
+  ejectile.SetMag(GetMomentum());
+  return ejectile + gamma;
+}
+
+double TGrandRaidenHit::GetMomentum() {
+  if (momentum) { return momentum; }
+  momentum = GValue::Value("GrandRaiden_Slope")*rcnp.GR_X(0) + GValue::Value("GrandRaiden_Offset");
+  return momentum;
 }
 
 std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y) {

@@ -30,7 +30,8 @@ class TGrandRaidenHit : public TDetectorHit {
     void     BuildFrom();
 
     TVector3 GetEjectileVector();
-    double GetExEnergy();
+    TVector3 ReconstructInvariant(const TVector3& gamma);
+    double   GetMomentum();
 
     std::pair<double,double> Raytrace();
     const std::vector<LaBrHit>& GetLaBr() { return labr_hits; }
@@ -65,6 +66,7 @@ private:
     Long_t Timestamp;
     RCNPEvent rcnp;
     Double_t excitation_energy;
+    Double_t momentum;
 
     static unsigned int xdegree;  //!
     static unsigned int adegree; //!
