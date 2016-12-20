@@ -69,13 +69,15 @@ void TGrandRaidenHit::BuildFrom(){
         if ((*qtc_le_chan)[i]==(*qtc_tr_chan)[j]) {
 
           LaBrHit temphit;
+          temphit.SetTimestamp(Timestamp);
           temphit.channel = (*qtc_le_chan)[i];
           temphit.width = (*qtc_tr_tdc)[j] - (*qtc_le_tdc)[i];
           temphit.qtc_le =(*qtc_le_tdc)[i];
           temphit.qtc_tr = (*qtc_tr_tdc)[j];
-
+          unsigned int address = (2 << 24) + temphit.channel;
+          temphit.SetAddress(address);
+          temphit.SetCharge(temphit.width);
           labr_hits.push_back(temphit);
-
         }
       }
     }
