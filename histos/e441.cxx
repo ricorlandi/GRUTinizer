@@ -96,7 +96,8 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
     // cagra core energy summary
     obj.FillHistogram("CrystalEnergySummary",
-                      6000,-2000,22000,core_hit.GetCorrectedEnergy(),
+//                      6000,-2000,22000,core_hit.GetCorrectedEnergy(),
+                      18000,-2000,22000,core_hit.GetCorrectedEnergy(),
                       49,0,49,crystal_id);
     obj.FillHistogram("EgammaSum",7000,0,21000,core_hit.GetCorrectedEnergy());
 
@@ -294,9 +295,9 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
         int channum = labr_hit.channel;
         if ((labr_hit.qtc_le >= -3000) && (labr_hit.qtc_le <= -2000)) { // prompt
           stream.str(""); stream << "X_LaBrE_" << channum;
-          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.GetEnergy());
+          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),500,0,20000,labr_hit.GetEnergy());
           stream.str(""); stream << "X_LaBrE_sum";
-          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.GetEnergy());
+          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),500,0,20000,labr_hit.GetEnergy());
 
           // old
           obj.FillHistogram(dirname,"GR_X",1200,-600,600, rcnp.GR_X(0));
@@ -311,17 +312,12 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
           stream.str(""); stream << "LaBrE_LEGate" << channum;
           obj.FillHistogram(dirname,stream.str(), 10000, -5000, 15000, labr_hit.GetEnergy());
-
-          stream.str(""); stream << "X_LaBrE" << channum;
-          obj.FillHistogram(dirname,stream.str(),1200,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.GetEnergy());
-
-
         }
         else if ((labr_hit.qtc_le >= -4000) && (labr_hit.qtc_le <= -3000)) { // random
           stream.str(""); stream << "rand_X_LaBrE_" << channum;
-          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.GetEnergy());
+          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),500,0,20000,labr_hit.GetEnergy());
           stream.str(""); stream << "rand_X_LaBrE_sum";
-          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),2500,0,20000,labr_hit.GetEnergy());
+          obj.FillHistogram(dirname, stream.str(),300,-600,600,rcnp.GR_X(0),500,0,20000,labr_hit.GetEnergy());
         }
 
         stream.str(""); stream << "LaBrLeading" << channum;
@@ -329,14 +325,13 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
         stream.str(""); stream << "LaBr" << channum << "_LE[LaBr_E]";
         obj.FillHistogram("GR", stream.str(), 1000, -5000, 15000, labr_hit.GetEnergy(), 1000,-40000, 40000, labr_hit.qtc_le);
-
-
-        stream.str(""); stream << "LaBrE" << channum;
-        obj.FillHistogram("GR", stream.str(), 10000, -5000, 15000, labr_hit.GetEnergy());
       } // end labr3 analysis
-
-
     } // end rayid == 0 (good reconstruction)
+
+    for (auto& labr_hit : hit.GetLaBr()) {
+      stream.str(""); stream << "LaBrE" << labr_hit.channel;
+      obj.FillHistogram("GR", stream.str(), 10000, -5000, 15000, labr_hit.GetEnergy());
+    }
 
     if (rcnp.GR_ADC()) {
       auto& adc = *rcnp.GR_ADC();
