@@ -85,6 +85,7 @@ struct LaBrHit : public TDetectorHit {
     Double_t qtc_le;
     Double_t qtc_tr;
     Double_t width;
+    ClassDef(LaBrHit,1);
 };
 
 
