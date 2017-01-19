@@ -110,8 +110,15 @@ class MainWindow(object):
         style.SetOptFit(1111)
         style.SetPadBorderSize(1)
         style.SetPadBorderMode(1)
-        style.SetPadTickX(1); #
-        style.SetPadTickY(1); #
+        style.SetPadTickX(1)            #
+        style.SetPadTickY(1)            #
+        style.SetCanvasColor(0)         #
+        style.SetTitleFillColor(0)      #
+        style.SetTickLength(-0.01,"X")  #
+        style.SetTickLength(-0.01,"Y")  #
+        style.SetStatColor(0)           #
+        style.SetStatBorderSize(1)      #
+        style.SetPalette(51)            #
         ROOT.gROOT.SetStyle("GRUTStyle")
         ROOT.gROOT.ForceStyle()
 
