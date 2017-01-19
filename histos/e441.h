@@ -30,6 +30,7 @@ void MakeCAGRAHistograms(TRuntimeObjects&, TCagra&);
 void MakeGrandRaidenHistograms(TRuntimeObjects&, TGrandRaiden&);
 void MakeCoincidenceHistograms(TRuntimeObjects&, TCagra&, TGrandRaiden&);
 void LoadCuts();
+void InitTarget();
 
 static string name;
 static string dirname="";
@@ -42,12 +43,12 @@ static TNucleus fe56("56Fe");
 static TNucleus nb93("93Nb");
 static TNucleus sn124("124Sn");
 
-static const double ke_projectile = 600.; // MeV
 static const double m_projectile = li6.GetMass();
+static const double eloss = GValue::Value("EnergyLoss");
+static const double ke_projectile = GValue::Value("BeamKineticE") - eloss;
 static const double e_projectile = m_projectile + ke_projectile;
 static const double p_projectile = TMath::Sqrt(e_projectile*e_projectile-m_projectile*m_projectile);
 static const double beta = p_projectile/e_projectile;
-//static const double m_target = c12.GetMass();
 
 
 //static TNucleus li6ex(3,3,li6.GetMass()+Li6Ex,"6Li*");

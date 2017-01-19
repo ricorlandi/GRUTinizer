@@ -35,12 +35,12 @@ GrandRaiden_Offset {
 }
 
 BeamKineticE {
-  Value: 588.00
+  Value: 588.0
       // MeV
 }
 
 EnergyLoss {
-  Value: 0.961
+  Value: 0.50157
       // MeV
 }
 
@@ -52,5 +52,5 @@ EnergyLoss {
 // 93Nb  = 4
 
 Target {
-  Value: 1
+  Value: 2
 }

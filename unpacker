@@ -1,0 +1,86 @@
+#!/bin/bash
+#PBS -q AM
+
+# usage : qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=<run number> unpack
+# e.g.  : qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=2071 unpack
+# rootfiles are placed in output directory below
+
+RUN_NUMBER="-1"
+anadir=.
+hists="e441"
+CAL_FILE=e441.cal
+VAL_FILE=c12.val
+DO_HISTS=0
+
+
+while getopts ":r:v:c:h" opt; do
+    case $opt in
+        r)
+            RUN_NUMBER=$OPTARG
+            ;;
+        c)
+            CAL_FILE=$OPTARG
+            ;;
+        v)
+            VAL_FILE=$OPTARG
+            ;;
+        h)  DO_HISTS=1
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+        :)
+            echo "Option -$OPTARG requires an argument." >&2
+            exit 1
+            ;;
+    esac
+done
+
+if [ $RUN_NUMBER -eq -1 ] || [ $# == 0 ]; then
+    echo "Usage: ./unpack -r RUN_NUMBER -c CALIBRATION_FILE -v VALUE_FILE"
+    exit
+fi
+
+
+
+histlib=$anadir/lib/lib$hists.so
+histsrc=$anadir/histos/$hists.cxx
+calibrations=$anadir/config/$CAL_FILE
+histdef=$anadir/hist.def
+constants=$anadir/config/$VAL_FILE
+grutinizer=$anadir/bin/grutinizer
+
+# data directories
+grdata=$anadir/data/gr/
+outputdir=$anadir/data/analysis/
+
+run_number=$(echo "$RUN_NUMBER" | sed -r 's/.*_([0-9]*)\..*/\1/g')
+outputdir+="Run$run_number/"
+mkdir -p $outputdir
+
+ 
+
+
+x=$(ls $anadir/data/cagra/run_${run_number}.gtd* 2> /dev/null)
+
+if [ "$x" == "" ]; then
+    cagradata=""
+else
+    cagradata="$anadir/data/cagra/run_${run_number}.gtd*"
+fi
+
+
+
+if [ $DO_HISTS == 1 ]; then
+    cp $calibrations $constants $histdef $histsrc $outputdir
+    cmd="$grutinizer -Hmq $histlib $calibrations $constants ${cagradata} ${grdata}run${run_number}.bld -o ${outputdir}run${run_number}.root --hist-output ./hist${run_number}.root"
+else
+    cp $calibrations $constants $histdef $outputdir
+    cmd="$grutinizer -mq $calibrations $constants ${cagradata} ${grdata}run${run_number}.bld -o ${outputdir}run${run_number}.root"
+fi
+echo $cmd
+echo $cmd > $outputdir"grut.cmd"
+
+$cmd
+

@@ -35,7 +35,7 @@ GrandRaiden_Offset {
 }
 
 BeamKineticE {
-  Value: 588.00
+  Value: 588.0
       // MeV
 }
 

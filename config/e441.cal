@@ -40,19 +40,19 @@
 
 LAB01XP00 {
   Address: 0x02000000
-  EnergyCoeff: 0 2
+  EnergyCoeff: -9.769e+02  1.263e+00 -1.442e-05
 }
 LAB02XP00 {
   Address: 0x02000003
-  EnergyCoeff: 0 1
+  EnergyCoeff: -789.9 1.105 -0.000003374
 }
 LAB03XP00 {
   Address: 0x02000008
-  EnergyCoeff: 0 1
+  EnergyCoeff: -851.8 1.199 -0.00001185
 }
 LAB04XP00 {
   Address: 0x0200000E
-  EnergyCoeff: 0 1
+  EnergyCoeff: -734.3 1.011 1.819e-06
 }
 
 

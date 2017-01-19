@@ -1,6 +1,6 @@
 inputfiles = inputfiles.dat
-data_dir = /np1a/cagra/gr/2016campaign
-rootfiles_subdir = rootfiles/E441
+data_dir = ./data
+rootfiles_subdir = unpacked
 histo_lib = ./lib/libe441.so
 other_config_files = 
 grutinizer = ./bin/grutinizer
