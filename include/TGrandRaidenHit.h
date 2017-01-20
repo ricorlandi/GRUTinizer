@@ -44,13 +44,13 @@ class TGrandRaidenHit : public TDetectorHit {
     const Long_t& GetTimestamp() { return Timestamp; }
     RCNPEvent& GR() { return rcnp; }
     static void SetRaytraceParams(std::vector<double> apar, std::vector<double> bpar,
-                                  size_t xdegree=2, size_t adegree=2, size_t y_degree=1);
+                                  size_t xdeg=3, size_t adeg=1, size_t ydeg=1, size_t bdeg=1);
 
 private:
 
     // angle reconstruction (energy reconstruction still needs implementation)
     // apply sieveslit transform to raytrace from focal plane to target position
-    std::pair<double,double> raytrace(double x, double a, double y);
+    std::pair<double,double> raytrace(double x, double a, double y, double b);
 
     // Double_t ADC[4];
     // Double_t RF;
@@ -71,6 +71,7 @@ private:
     static unsigned int xdegree;  //!
     static unsigned int adegree; //!
     static unsigned int ydegree; //!
+    static unsigned int bdegree; //!
     static std::vector<double> acoefs; //!
     static std::vector<double> bcoefs; //!
 

@@ -10,7 +10,7 @@ ClassImp(TGrandRaidenHit)
 
 std::vector<double> TGrandRaidenHit::acoefs;
 std::vector<double> TGrandRaidenHit::bcoefs;
-unsigned int TGrandRaidenHit::xdegree = 2, TGrandRaidenHit::adegree = 2, TGrandRaidenHit::ydegree = 1;
+unsigned int TGrandRaidenHit::xdegree = 3, TGrandRaidenHit::adegree = 1, TGrandRaidenHit::ydegree = 1, TGrandRaidenHit::bdegree = 1;
 
 
 TGrandRaidenHit::TGrandRaidenHit() : vector(1.,1.,1.) {
@@ -98,21 +98,22 @@ void TGrandRaidenHit::BuildFrom(){
 #endif
 }
 
-void TGrandRaidenHit::SetRaytraceParams(std::vector<double> apar, std::vector<double> bpar, size_t xdeg, size_t adeg, size_t ydeg) {
+void TGrandRaidenHit::SetRaytraceParams(std::vector<double> apar, std::vector<double> bpar, size_t xdeg, size_t adeg, size_t ydeg, size_t bdeg) {
   xdegree=xdeg;
   adegree=adeg;
   ydegree=ydeg;
+  bdegree=bdeg;
   acoefs = std::move(apar);
   bcoefs = std::move(bpar);
 }
 
 std::pair<double,double> TGrandRaidenHit::Raytrace() {
-  return raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));
+  return raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0),rcnp.GR_PH(0));
 }
 TVector3 TGrandRaidenHit::GetEjectileVector() {
 
   double thetax=0,thetay=0; // A,B
-  std::tie(thetax,thetay) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));
+  std::tie(thetax,thetay) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0),rcnp.GR_PH(0));
   thetax/=1000; // convert to radian from mrad
   thetay/=1000; // convert to radian from mrad
   auto phi = TMath::ATan2(TMath::Sin(thetay),TMath::Sin(thetax));
@@ -138,7 +139,7 @@ double TGrandRaidenHit::GetMomentum() {
   return momentum;
 }
 
-std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y) {
+std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y, double b) {
   double sum = 0;
   double count = 0;
   double A = 0;
@@ -160,8 +161,12 @@ std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y)
     for (auto j=0u; j<= adegree; j++) {
       double sum3 = 0;
       for (auto k=0u; k<= ydegree; k++) {
-        sum3 += bcoefs[count]*pow(y,k);
-        count++;
+        double sum4 = 0;
+        for (auto l=0u; l<= bdegree; l++) {
+          sum4 += bcoefs[count]*pow(b,l);
+          count++;
+        }
+        sum3 += sum4*pow(y,k);
       }
       sum2 += sum3*pow(a,j);
     }
