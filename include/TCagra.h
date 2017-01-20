@@ -28,7 +28,7 @@ public:
   void PrintHit(int i){ cagra_hits.at(i).Print(); }
 
   static TVector3 GetSegmentPosition(int slot, char core, int seg);
-  static size_t GetCrystalId(int slot, char core) const;
+  static size_t GetCrystalId(int slot, char core);
 
   // Allows for looping over all hits with for(auto& hit : cagra) { }
   std::vector<TCagraHit>::iterator begin() { return cagra_hits.begin(); }
@@ -42,6 +42,7 @@ private:
   std::vector<TCagraHit> cagra_hits;
   static std::map<int,TVector3> detector_positions;
   static std::map<int,size_t> crystal_ids;
+  static bool positions_loaded;
 
   ClassDef(TCagra,1);
 };

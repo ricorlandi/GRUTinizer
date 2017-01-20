@@ -17,6 +17,8 @@
 #include "TGrandRaiden.h"
 #include "TANLEvent.h"
 #include "GValue.h"
+#include "TNucleus.h"
+#include <tuple>
 
 #define BAD_NUM -441441
 #define PRINT(x) std::cout << #x" = " << x << std::endl
@@ -39,6 +41,15 @@ static TNucleus mg24("24Mg");
 static TNucleus fe56("56Fe");
 static TNucleus nb93("93Nb");
 static TNucleus sn124("124Sn");
+
+static const double ke_projectile = 600.; // MeV
+static const double m_projectile = li6.GetMass();
+static const double e_projectile = m_projectile + ke_projectile;
+static const double p_projectile = TMath::Sqrt(e_projectile*e_projectile-m_projectile*m_projectile);
+static const double beta = p_projectile/e_projectile;
+//static const double m_target = c12.GetMass();
+
+
 //static TNucleus li6ex(3,3,li6.GetMass()+Li6Ex,"6Li*");
 
 ///=============Two Body Kinematics===========
@@ -47,7 +58,7 @@ double omega(double x, double y, double z){
   return sqrt(x*x + y*y + z*z -2*x*y -2*y*z -2*x*z);
 }
 
-double *kine_2b(double m1, double m2, double m3, double m4, double K_proj, double thetalab, double K_eject){
+std::tuple<double,double,double> kine_2b(double m1, double m2, double m3, double m4, double K_proj, double thetalab, double K_eject){
   // m1(projectile) - m2(target) - m3(ejectile) - and m4(recoil)
 
   double Et1 = K_proj + m1;
@@ -78,13 +89,7 @@ double *kine_2b(double m1, double m2, double m3, double m4, double K_proj, doubl
 
   J_LtoCM = abs( ((omega(s,pow(m1,2),pow(m2,2))*omega(s,pow(m3,2),pow(m4,2)))/(4*s*p1*p3))*(1.+Et1/m2 - cos(thetalab)*(Et3*p1)/(m2*p3)) );
 
-
-  static double output[3];
-  output[0]= theta_cm;
-  output[1]= Ex;
-  output[2]= J_LtoCM;
-  return output;
-
+  return std::tuple<double,double,double>(theta_cm,Ex,J_LtoCM);
 }
 ///=============Brho to Kinetic energy transform===========
 double BrhoToTKE(double  brho, double  mass, double Z) {
@@ -96,10 +101,38 @@ double BrhoToTKE(double  brho, double  mass, double Z) {
   return mass * (sqrt(1. + TMath::Power(((1.e2 * brho * TMath::C() / 1.e8 * Z) / mass), 2)) - 1.);
 }
 
+void LoadRaytraceParams(size_t xdeg=2, size_t adeg=2, size_t ydeg=1);
+
+double VectorAverage(const std::vector<short int>& vec) {
+  double sum = 0;
+  for (auto const& el : vec) {
+    sum += el;
+  }
+  return (float)sum/vec.size();
+}
+
+double VectorStdDev(const std::vector<short int>& vec) {
+  double avg = VectorAverage(vec);
+  double sum = 0;
+  for (auto const& el : vec) {
+    sum += std::pow((el-avg),2);
+  }
+  return sum/vec.size();
+}
+
+std::pair<double,double> VectorStats(const std::vector<short int>& vec) {
+  double avg = VectorAverage(vec);
+  double sum = 0;
+  for (auto const& el : vec) {
+    sum += std::pow((el-avg),2);
+  }
+  return std::pair<double,double>(avg,sqrt(sum/vec.size()));
+}
+
+
 void DrawAverageTrace(TCagraHit& core_hit) {
 // Average trace analysis
   //////////////////
-  static int counter=0;
   static std::vector<std::vector<short int>> traces;
   auto trace = core_hit.GetSanitizedTrace();
   if(trace->size() > 50) {
@@ -132,105 +165,6 @@ void DrawAverageTrace(TCagraHit& core_hit) {
     traces.clear();
   }
 }
-
-
-// sieve slit transformation coefficients
-// output from sieveslit.py
-static std::vector<double> acoefs =
-{
-  25478959.64415743201971054,
-  -0.01771996157436579,
-  -0.00000375686641008,
-  -25478962.08887941017746925,
-  339.32639498225580610,
-  285.41500265652570079
-};
-static std::vector<double> bcoefs =
-{
-  -8.77979136468771948,
-  3.57167199982826045,
-  144.77038232928563843,
-  -102.62252113966886213,
-  -1669.00084319835968927,
-  1060.28866587772699859,
-  0.00281259943988080,
-  0.00390660581203093,
-  -0.57697427700803183,
-  -0.03624075884543333,
-  10.73431026156209711,
-  -0.86971847190018392,
-  0.00002737725798545,
-  -0.00000000249027871,
-  -0.00140344227013718,
-  0.00008863729153273,
-  0.01262661852581874,
-  -0.00031269175012557
-};
-
-
-static unsigned int xdegree = 2, adegree = 2, ydegree = 1;
-// angle reconstruction (energy reconstruction still needs implementation)
-// apply sieveslit transform to raytrace from focal plane to target position
-std::pair<double,double> raytrace(double x, double a, double y) {
-  double sum = 0;
-  double count = 0;
-  double A = 0;
-  double B = 0;
-  // dispersive angle raytrace
-  for (auto i=0u; i<=xdegree; i++) {
-    sum += acoefs[i]*pow(x,i);
-    count = i;
-  }
-  for (auto i=0u; i<=adegree; i++) {
-    sum += acoefs[i+count+1]*pow(a,i);
-  }
-  A=sum;
-  sum=count=0;
-
-  // non-dispersive angle raytrace
-  for (auto i=0u; i<= xdegree; i++) {
-    double sum2 = 0;
-    for (auto j=0u; j<= adegree; j++) {
-      double sum3 = 0;
-      for (auto k=0u; k<= ydegree; k++) {
-        sum3 += bcoefs[count]*pow(y,k);
-        count++;
-      }
-      sum2 += sum3*pow(a,j);
-    }
-    sum += sum2*pow(x,i);
-  }
-  B=sum;
-
-  return std::pair<double,double>(A,B);
-}
-
-double VectorAverage(const std::vector<short int>& vec) {
-  double sum = 0;
-  for (auto const& el : vec) {
-    sum += el;
-  }
-  return (float)sum/vec.size();
-}
-
-double VectorStdDev(const std::vector<short int>& vec) {
-  double avg = VectorAverage(vec);
-  double sum = 0;
-  for (auto const& el : vec) {
-    sum += std::pow((el-avg),2);
-  }
-  return sum/vec.size();
-}
-
-std::pair<double,double> VectorStats(const std::vector<short int>& vec) {
-  double avg = VectorAverage(vec);
-  double sum = 0;
-  for (auto const& el : vec) {
-    sum += std::pow((el-avg),2);
-  }
-  return std::pair<double,double>(avg,sqrt(sum/vec.size()));
-}
-
 
 
 ///=============Mass definition============

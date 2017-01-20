@@ -465,8 +465,6 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
 
 
-
-
       // raytracing
       double A=0,B=0;
       std::tie(A,B) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0));

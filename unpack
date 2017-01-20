@@ -1,0 +1,74 @@
+#!/bin/bash
+#PBS -q AM
+
+# usage : qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=<run number> unpack
+# e.g.  : qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=2071 unpack
+
+
+
+#defualt inputs for val and cal files
+CALFILE=e441.cal
+VALFILE=e441_c12.val
+RUN="-1"
+user="skeleton"
+
+while getopts ":r:v:c:u:" opt; do
+    case $opt in
+	r)
+	    RUN=$OPTARG
+	    ;;
+	c)
+	    CALFILE=$OPTARG
+	    ;;
+	v)
+	    VALFILE=$OPTARG
+	    ;;
+	u)
+	    user=$OPTARG
+	    ;;
+	\?)
+	    echo "Invalid option: -$OPTARG" >&2
+	    exit 1
+	    ;;
+	:)
+	    echo "Option -$OPTARG requires an argument." >&2
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ $RUN -eq -1 ] || [ $# == 0 ]; then
+   echo "Usage: ./unpack -r RUN_NUMBER -c CALIBRATION_FILE -v VALUE_FILE"
+   exit
+fi
+
+ana_path="$HOME/ana/$user"
+
+
+
+
+
+if [ ! -d $ana_path ]; then
+    echo "There is no directory $ana_path"
+    exit
+fi
+
+if [ ! -e $ana_path/config/$CALFILE ]; then
+    echo "Can't find calibration file $ana_path/config/$CALFILE"
+    exit
+fi
+
+if [ ! -e $ana_path/config/$VALFILE ]; then
+    echo "Can't find val file $ana_path/config/$VALFILE"
+    exit
+fi
+
+echo "<Info:unpack>:  Run Number $RUN"
+echo "<Info:unpack>:  Calibrationfile selected $ana_path/config/$CALFILE"
+echo "<Info:unpack>:  Valfile selected $ana_path/config/$VALFILE"
+
+    
+
+qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=$RUN,VAL_FILE=$VALFILE,CAL_FILE=$CALFILE,ANADIR=${ana_path} ./unpack.pbs
+
+watch -n 0.5 "qstat | grep cagra"

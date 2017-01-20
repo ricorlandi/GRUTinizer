@@ -37,6 +37,7 @@ TCagraHit::TCagraHit() :  charge(0.0), prerise_energy(0), postrise_energy(0), fi
   prev_postrise_begin_sample=0;
   prerise_begin=0;
   prerise_end=0;
+  corrected_energy=0;
 }
 
 TCagraHit::~TCagraHit() {
@@ -153,6 +154,12 @@ int TCagraHit::GetMainSegnum() const {
   return output;
 }
 
+TVector3 TCagraHit::GetMomentumVector(pos opt, bool apply_array_offset){
+  auto gamma = GetPosition(opt,apply_array_offset);
+  gamma.SetMag(GetCorrectedEnergy()/1000);
+  return gamma;
+}
+
 TVector3 TCagraHit::GetPosition(pos opt, bool apply_array_offset) const {
   TChannel* chan = TChannel::GetChannel(fAddress);
   auto clover_type = *chan->GetSystem();
@@ -163,10 +170,10 @@ TVector3 TCagraHit::GetPosition(pos opt, bool apply_array_offset) const {
   // seg = 1 gives the more backward segment
   // seg = 2 gives the more forward segment
 
-  if (opt == pos::both || opt == pos::seg_only) {
+  if (chan->GetName()[0] == 'B') { return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1)); }
 
-    if (chan->GetName()[0] == 'B') { return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1)); }
-    else if (clover_type == 'Y') {
+  if (opt == pos::both || opt == pos::seg_only) {
+    if (clover_type == 'Y') {
 
       TCagraHit const* seg_hit = nullptr;
 
@@ -186,6 +193,7 @@ TVector3 TCagraHit::GetPosition(pos opt, bool apply_array_offset) const {
       case 3:
       default:
         std::cout << "Slot: " << slot << " Core: " << core << " NumHits: " << num_hits << std::endl;
+        std::cout << "Core hit Energy:" << GetEnergy() << " Timestamp: " << Timestamp() << std::endl;
         std::cout << "Segment hits: \n";
         for (auto i=0u; i<fSegments.size(); i++) {
           std::cout << fSegments[i].GetDetnum() << " " << fSegments[i].GetLeaf() <<
@@ -244,12 +252,12 @@ TVector3 TCagraHit::GetPosition(pos opt, bool apply_array_offset) const {
   return array_pos;
 }
 
-double TCagraHit::GetDoppler(double beta, pos opt = pos::both, const TVector3& particle_vec, const TVector3& offset) const {
+double TCagraHit::GetDoppler(double beta, pos opt, const TVector3& particle_vec, const TVector3& offset) {
 
   double gamma = 1/(sqrt(1-pow(beta,2)));
   TVector3 pos = GetPosition(opt) + offset;
   double cos_angle = TMath::Cos(pos.Angle(particle_vec));
-  double dc_en = GetEnergy()*gamma *(1 - beta*cos_angle);
+  double dc_en = GetCorrectedEnergy()*gamma *(1 - beta*cos_angle);
   return dc_en;
 }
 
@@ -267,6 +275,8 @@ Float_t TCagraHit::GetCharge() const {
 
 
 Double_t TCagraHit::GetCorrectedEnergy(Double_t asym_bl) {
+  if (!asym_bl && corrected_energy) { return corrected_energy; }
+
   TChannel* chan = TChannel::GetChannel(fAddress);
   Double_t Energy = 0;
   if(!chan){
@@ -286,6 +296,8 @@ Double_t TCagraHit::GetCorrectedEnergy(Double_t asym_bl) {
     pzE = chan->BaselineCorrection(pzE,asym_bl,polarity);
     Energy = chan->CalEnergy(pzE, fTimestamp);
   }
+
+  if (!asym_bl) { corrected_energy = Energy; }
   return Energy;
 }
 

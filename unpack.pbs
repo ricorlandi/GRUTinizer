@@ -1,0 +1,61 @@
+#!/bin/bash
+#PBS -q AM
+
+# usage : qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=<run number> unpack
+# e.g.  : qsub -l select=1:ncpus=8:mem=8gb -v RUN_NUMBER=2071 unpack
+# rootfiles are placed in output directory below
+
+#RUN_NUMBER=$1
+ 
+source $HOME/apps/dot_cagragrc
+
+cd $ANADIR
+echo "current directorty " $(pwd)
+echo "Analysis directory " $ANADIR
+
+anadir=$ANADIR
+
+hists="e441"
+histlib=$anadir/lib/lib$hists.so
+histsrc=$anadir/histos/$hists.cxx
+calibrations=$anadir/config/$CAL_FILE
+histdef=$anadir/hist.def
+constants=$anadir/config/$VAL_FILE
+grutinizer=$anadir/bin/grutinizer
+
+Quitsdxc;adslkasdfasdf
+# data directories
+grdata=$anadir/data/gr/E441/
+
+
+
+
+outputdir=$anadir/data/rootfiles/E441/
+
+run_number=$(echo "$RUN_NUMBER" | sed -r 's/.*_([0-9]*)\..*/\1/g')
+outputdir+="Run$run_number/"
+mkdir -p $outputdir
+
+ 
+
+
+x=$(ls $anadir/data/cagra/E441/run_${run_number}.gtd* 2> /dev/null)
+
+if [ "$x" == "" ]; then
+    cagradata=""
+else
+    cagradata="\"$anadir/data/cagra/E441/run_${run_number}.gtd*\""
+fi
+
+
+
+
+
+cp $calibrations $constants $histdef $histsrc $outputdir
+cmd="$grutinizer -Hmq $histlib $calibrations $constants ${cagradata} ${grdata}run${run_number}.bld -o ${outputdir}run${run_number}.root --hist-output ./hist${run_number}.root"
+
+echo $cmd
+echo $cmd > $outputdir"grut.cmd"
+
+$cmd
+
