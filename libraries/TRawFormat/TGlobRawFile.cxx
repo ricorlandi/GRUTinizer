@@ -1,6 +1,7 @@
 #include "TGlobRawFile.h"
 
 #include "TGRUTUtilities.h"
+#include <algorithm>
 
 namespace {
   const std::chrono::system_clock::duration time_between_checks =
@@ -9,7 +10,10 @@ namespace {
 
 TGlobRawFile::TGlobRawFile(std::string pattern, kFileType file_type)
   : fPattern(pattern), fFileType(file_type),
-    fPreviousCheck(std::chrono::system_clock::now() - 2*time_between_checks) { }
+    fPreviousCheck(std::chrono::system_clock::now() - 2*time_between_checks) {
+  // bug fix for when glob is launched from a script
+  fPattern.erase(std::remove_if(fPattern.begin(), fPattern.end(), [](char c) { return c == '"'; }),fPattern.end());
+}
 
 void TGlobRawFile::CheckForFiles() {
   auto now = std::chrono::system_clock::now();

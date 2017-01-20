@@ -1,0 +1,40 @@
+#!/bin/bash
+
+if [ $# != 1 ]; then
+	echo " USAGE: online [RUN_NUMBER] "
+else
+	RUN_NUMBER=$1
+fi
+
+
+cal_file=e441.cal
+val_file=e441_c12.val
+
+# configurable files:
+
+anadir=.
+hists=e441
+histlib=$anadir/lib/lib$hists.so
+histsrc=$anadir/histos/$hists.cxx
+calibrations=$anadir/config/$cal_file
+histdef=$anadir/hist.def
+constants=$anadir/config/$val_file
+grutinizer=$anadir/bin/grutinizer
+
+# data directories
+grdata=$anadir/data/gr/E450/
+cagradata=$anadir/data/cagra/E450/
+outputdir=$anadir/data/rootfiles/E441_online/
+
+run_number=$(echo "$RUN_NUMBER" | sed -r 's/.*_([0-9]*)\..*/\1/g')
+outputdir+="Run$run_number/"
+#mkdir -p $outputdir
+#cp $calibrations $constants $histdef $histsrc $outputdir
+
+cagradatavar=$cagradata"run_"$run_number".gtd*"
+cagradatavar="\"$cagradatavar\""
+
+#echo $grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"$run_number".bld" -o /dev/null --hist-output $outputdir"hist"$run_number".root"
+#echo $grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"$run_number".bld" -o /dev/null --hist-output $outputdir"hist"$run_number".root" > $outputdir"online.cmd"
+echo $grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"$run_number".bld" -o /dev/null --hist-output /dev/null
+$grutinizer -Hmg $histlib $calibrations $constants $cagradatavar $grdata"run"${run_number}".bld" -o /dev/null --hist-output /dev/null

@@ -15,10 +15,12 @@
 #include <cassert>
 
 std::map<int,TVector3> TCagra::detector_positions;
-
+std::map<int,size_t> TCagra::crystal_ids;
+bool TCagra::positions_loaded = false;
 
 TCagra::TCagra(){
   Clear();
+  LoadDetectorPositions();
 }
 
 TCagra::~TCagra() {
@@ -379,11 +381,7 @@ TVector3 TCagra::GetSegmentPosition(int slot, char core, int seg) {
   if(slot < 1 || slot > 16 || seg < 0 || seg > 4) {
     return TVector3(std::sqrt(-1),std::sqrt(-1),std::sqrt(-1));
   }
-  static bool once = true;
-  if (once) {
-    LoadDetectorPositions();
-    once = false;
-  }
+  LoadDetectorPositions();
 
   int index = (slot << 16) + (((int)core) << 8) + seg;
 
@@ -395,6 +393,7 @@ TVector3 TCagra::GetSegmentPosition(int slot, char core, int seg) {
 }
 
 void TCagra::LoadDetectorPositions() {
+  if (positions_loaded) { return; }
 
   std::string filename = std::string(getenv("GRUTSYS")) + "/config/CAGRA_positions.txt";
 
@@ -419,8 +418,17 @@ void TCagra::LoadDetectorPositions() {
       continue;
     }
 
-    int index = (nclover << 16) + (((int)ncrystal) << 8) + nsegment;
+    int index = (nclover << 16) + (((int)ncrystal) << 8);
 
+    // assign a unique id to each clover crystal
+    if (ncrystal != 'X') {
+      static size_t core_count = 0;
+      if (crystal_ids.count(index) == 0) {
+        crystal_ids[index] = core_count++;
+      }
+    }
+
+    index += nsegment;
     //Pack into the vector of transformations.
     TVector3 vec = TVector3(1.,1.,1.);
     vec.SetTheta(theta*TMath::Pi()/180.);
@@ -428,6 +436,13 @@ void TCagra::LoadDetectorPositions() {
     vec.SetMag(rho);
     detector_positions[index] = vec;
   }
+
+  positions_loaded = true;
+}
+size_t TCagra::GetCrystalId(int slot, char core) {
+  if (core == 'X') { return (size_t)-1; }
+  int index = (slot << 16) + (((int)core) << 8);
+  return crystal_ids.at(index);
 }
 
 void TCagra::Print(Option_t *opt) const { }
