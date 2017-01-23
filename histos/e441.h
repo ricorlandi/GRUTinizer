@@ -43,6 +43,9 @@ static TNucleus fe56("56Fe");
 static TNucleus nb93("93Nb");
 static TNucleus sn124("124Sn");
 
+static const double a_offset = GValue::Value("A_Offset");
+static const double b_offset = GValue::Value("B_Offset");
+
 static const double m_projectile = li6.GetMass();
 static const double eloss = GValue::Value("EnergyLoss");
 static const double ke_projectile = GValue::Value("BeamKineticE") - eloss;

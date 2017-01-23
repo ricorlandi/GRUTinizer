@@ -360,8 +360,8 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
         stream.str(""); stream << "LaBr" << channum << "_LE[LaBr_E]";
         hist(false,obj,"GR", stream.str(), 2000, -1000, 19000, labr_hit.GetEnergy(), 1000,-4000, 1000, labr_hit.qtc_le);
       } // end labr3 analysis
-    } // end rayid == 0 (good reconstruction)
-
+      // end rayid == 0 (good reconstruction)
+    }
 
     auto labr_hits = hit.GetLaBr();
     for (int i=0; i<labr_hits.size(); i++) {
@@ -459,8 +459,8 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
             double theta_cm=0,mmEx=0,J_L=0;
             std::tie(theta_cm,mmEx,J_L) = kine_2b(m_projectile,m_target,m_projectile,m_target,ke_projectile,ejectile.Theta(), ke_ejectile);
 
-            hist(true,obj,dirname,"ThetaCM",300,0,0,theta_cm);
-            hist(true,obj,dirname,"ReconstructedEx",600,5,65,mmEx);
+            hist(true,obj,dirname,"MissingMassThetaCM",300,0,0,theta_cm);
+            hist(true,obj,dirname,"MissingMassEx",600,5,65,mmEx);
 
             hist(true,obj,dirname,"Ecm_particle[Elab]",
                               2500,0,10000,Elab,
@@ -517,6 +517,11 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
 
                 bgo_hit = false;
 
+                // raytracing
+                double A=0,B=0;
+                std::tie(A,B) = hit.Raytrace();
+                hist(true,obj,dirname,"B[A]",500,0,0,A,500,0,0,B);
+
                 hist(true,obj,dirname,"Momentum",1000,2400,2800,hit.GetMomentum());
                 auto p_gamma = core_hit.GetMomentumVector(pos::core_only);
                 auto p_invariant = hit.ReconstructInvariant(p_gamma);
@@ -525,14 +530,17 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
                 auto ke_invariant = e_invariant - m_invariant;
                 hist(true,obj,dirname,"KE_invariant",1024,500,600,ke_invariant);
                 hist(true,obj,dirname,"p_invariant",1024,2400,2800,p_invariant.Mag());
+                auto theta_lab = p_invariant.Theta();
+                hist(true,obj,dirname,"InvariantThetaLab",300,0,0,theta_lab);
 
                 double theta_cm=0,Ex=0,J_L=0;
-                std::tie(theta_cm,Ex,J_L) = kine_2b(m_projectile,m_target,m_invariant,m_target,ke_projectile,p_invariant.Theta(), ke_invariant);
+                std::tie(theta_cm,Ex,J_L) = kine_2b(m_projectile,m_target,m_invariant,m_target,ke_projectile,theta_lab, ke_invariant);
 
 
                 if (Ecm_particle>=3400 && Ecm_particle<=3800) {
                   hist(true,obj,dirname+"_6LiEx_gate","ThetaCM",300,0,0.15,theta_cm);
                   hist(true,obj,dirname+"_6LiEx_gate","ReconstructedEx",600,5,65,Ex);
+                  hist(true,obj,dirname+"_6LiEx_gate","ThetaLab[Ex]",600,5,65,Ex,300,0,0.15,theta_lab);
                   hist(true,obj,dirname+"_6LiEx_gate","EgamLab[Ex]",
                                     600,5,65,Ex,
                                     5500,0,22000,core_hit.GetCorrectedEnergy());

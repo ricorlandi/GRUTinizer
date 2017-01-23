@@ -110,10 +110,12 @@ void TGrandRaidenHit::SetRaytraceParams(std::vector<double> apar, std::vector<do
 std::pair<double,double> TGrandRaidenHit::Raytrace() {
   return raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0),rcnp.GR_PH(0));
 }
-TVector3 TGrandRaidenHit::GetEjectileVector() {
+TVector3 TGrandRaidenHit::GetEjectileVector(double aoffset, double boffset) {
 
   double thetax=0,thetay=0; // A,B
   std::tie(thetax,thetay) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0),rcnp.GR_PH(0));
+  thetax += aoffset;
+  thetay += boffset;
   thetax/=1000; // convert to radian from mrad
   thetay/=1000; // convert to radian from mrad
   auto phi = TMath::ATan2(TMath::Sin(thetay),TMath::Sin(thetax));
