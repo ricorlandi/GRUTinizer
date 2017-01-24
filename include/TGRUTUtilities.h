@@ -27,6 +27,9 @@ inline size_t FindFileSize(const char* fname) {
 
 std::vector<std::string> glob(const std::string& pattern);
 bool is_bash_pattern(const std::string& pattern);
+std::vector<int> MakeVectorFromFile(const char *fname);
+
+std::string ReplaceAll(std::string str, const std::string& from, const std::string& to);
 
 int count_newlines(const std::string& str);
 

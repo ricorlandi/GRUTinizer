@@ -1,6 +1,7 @@
 #include "TGRUTUtilities.h"
 
 #include <cstdlib>
+#include <sys/stat.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -106,4 +107,31 @@ int count_newlines(const std::string& str) {
     nlinebreaks++;
   }
   return nlinebreaks;
+}
+
+std::vector<int> MakeVectorFromFile(const char *fname) {
+  std::vector<int> ret_vec;
+  std::string line(fname);
+  if(!line.length())
+    return ret_vec;
+  std::ifstream infile;
+  infile.open(fname);
+  line.clear();
+  while(getline(infile,line)) {
+    std::stringstream ss(line);
+    int x;
+    ss >> x;
+    ret_vec.push_back(x);
+  }
+  return ret_vec;
+}
+
+// From http://stackoverflow.com/a/24315631
+std::string ReplaceAll(std::string str, const std::string& from, const std::string& to) {
+  size_t start_pos = 0;
+  while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+    str.replace(start_pos, from.length(), to);
+    start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+  }
+  return str;
 }

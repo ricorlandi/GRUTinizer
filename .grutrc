@@ -1,4 +1,3 @@
-
 Unix.*.Root.MacroPath: .:$(GRUTSYS)/util:$(ROOTSYS)/macros
 #Unix.*.Root.DynamicPath:  .:~/rootlibs:$(ROOTSYS)/lib:$/home/tiguser/packages/SharcAnalysis
 
@@ -25,7 +24,7 @@ GRUT.GuiSetup: $(GRUTSYS)/gui_params.hist
 GRUT.SnapshotExt: 
 GRUT.SnapshotDir: 
 
-
+GRUT.DefaultCutFile: mycuts.root
 
 #files to load at log in:
 #Rint.Logon: $(GRUTSYS)/.grut_logon
@@ -47,7 +46,7 @@ Canvas.UseScreenFactor: true
 Canvas.ShowGuideLines: false
 
 Root.Fitter: Fumili2
-
+#Root.Fitter: Minuit
 
 
 Gui.IconPath:      $(GRUTSYS)/icons:$(ROOTSYS)/icons

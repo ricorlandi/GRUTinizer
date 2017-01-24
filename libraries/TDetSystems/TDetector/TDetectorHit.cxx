@@ -1,9 +1,11 @@
 #include "TDetectorHit.h"
 
 #include <iostream>
+#include <cmath>
 
-#include <TClass.h>
+#include "TClass.h"
 #include "TRandom.h"
+#include "TBuffer.h"
 
 ClassImp(TDetectorHit)
 
@@ -102,5 +104,16 @@ const char* TDetectorHit::GetName() const {
     return chan->GetName();
   } else {
     return "";
+  }
+}
+
+
+void TDetectorHit::Streamer(TBuffer &r_b) {
+  if(r_b.IsReading()) {
+    std::cout << "streamer\tin!" << std::endl;
+    r_b.ReadClassBuffer(TDetectorHit::Class(),this);
+  } else {
+    //std::cout << "streamer\tout!" << std::endl;
+    r_b.WriteClassBuffer(TDetectorHit::Class(),this);
   }
 }
