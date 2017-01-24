@@ -286,7 +286,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       // raytracing
       double A=0,B=0;
       std::tie(A,B) = hit.Raytrace();
-      hist(true,obj,dirname,"B[A]",500,0,0,A,500,0,0,B);
+      hist(true,obj,dirname,"B[A]",300,-75,75,A,300,-150,150,B);
 
       // for (auto& cut : xcuts) {
       //   if (x < cut+xwidth && x >= cut) {
@@ -550,6 +550,10 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
                   }
                   hist(true,obj,dirname+"_6LiEx_gate","KE_projectile",100,0,0,ke_projectile);
                   hist(true,obj,dirname+"_6LiEx_gate","ejectile_theta",1000,-.1,.1,ejectile.Theta());
+
+                  if (Ex >= 17.0 && Ex < 20.5) {
+                    hist(true,obj,dirname+"_6LiEx_gate","B[A]_15.1MeVgate",25,-25,25,A,25,-80,80,B);
+                  }
 
                 } else if (Ecm_particle>=3900 && Ecm_particle <=4300) {
                   hist(true,obj,dirname+"_6LiEx_sideband","ThetaCM",300,0,0.15,theta_cm);
