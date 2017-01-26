@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <cmath>
 
 #include "TCutG.h"
 #include "TDirectory.h"
@@ -14,6 +15,10 @@ class TH1;
 class TH2;
 class TFile;
 class TProfile;
+
+class GH1D;
+class GH2D;
+class TDetector;
 
 /// Object passed to the online histograms.
 /**
@@ -40,6 +45,9 @@ public:
   T* GetDetector(){
     return detectors->GetDetector<T>();
   }
+  TDetector *GetDetector(std::string dname) const { 
+    return detectors->GetDetector(dname);
+  }
 
   TCutG* GetCut(const std::string& name);
 
@@ -57,6 +65,20 @@ public:
                      int Xbins, double Xlow, double Xhigh, double Xvalue,
                      int Ybins, double Ylow, double Yhigh, double Yvalue,
                      double weight=1);
+
+  GH1D* InitHistogram(const char* name,const char *title,int bins, double low, double high);
+  GH2D* InitHistogram(const char* name,const char *title,int Xbins, double Xlow, double Xhigh,
+                                                        int Ybins, double Ylow, double Yhigh);
+  GH1D* InitHistogram(const char* dir,const char* name,const char *title,int bins, double low, double high);
+  GH2D* InitHistogram(const char* dir,const char* name,const char *title,int Xbins, double Xlow, double Xhigh,
+                                                                        int Ybins, double Ylow, double Yhigh);
+  int   FillHistogram(const char* name);
+  int   FillHistogram(const char* dir,const char* name);
+  
+  
+  
+  
+  
   TProfile* FillProfileHist(const char* name,
 			    int Xbins, double Xlow, double Xhigh, double Xvalue,
 			    double Yvalue);

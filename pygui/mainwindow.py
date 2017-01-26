@@ -506,7 +506,8 @@ class MainWindow(object):
             opt.append('colz')
         self._SetOptStat()
         hist.SetLineColor(color)
-        hist.Draw(' '.join(opt))
+        #hist.Draw(' '.join(opt))
+        hist.Draw()
 
     def AddDirectory(self, tdir):
         if tdir:
@@ -520,6 +521,17 @@ class MainWindow(object):
     def LoadCutG(self, cutg):
         if cutg:
             self.tcut_tab.AddCut(cutg)
+
+    def LoadCutFile(self, cutfile):
+        #if cutname is None:
+        #    filename = tkFileDialog.askopenfilename(filetypes=(("Cuts File", "*.cuts"),
+        #                                                       ("Cuts File", "*.root")))
+        #if not filename:
+        #   return
+        
+	#filename = os.path.abspath(filename)
+        #tfile = ROOT.TFile(filename);                
+        self.tcut_tab.AddFile(cutfile)
 
     def LoadDataFile(self, filename = None):
         if filename is None:

@@ -36,6 +36,7 @@ public:
   TLine *linex;
   TLine *liney;
   void Copy(TObject &object) const;
+  void Print(Option_t *opt) const; 
   bool operator<(const GMarker &rhs) const { return x < rhs.x; }
   ClassDef(GMarker,0)
 };
@@ -56,6 +57,7 @@ class GPopup : public TGTransientFrame  {
 class GCanvas : public TCanvas {
 public:
   GCanvas(Bool_t build = kTRUE);
+  GCanvas(int cols, int rows,Bool_t build=kTRUE);
   GCanvas(const char* name, const char* title = "", Int_t form = 1);
   GCanvas(const char* name, const char* title, Int_t ww, Int_t wh);
   GCanvas(const char* name, Int_t ww, Int_t wh, Int_t winid);

@@ -32,6 +32,7 @@
 
 //#include "GROOTGuiFactory.h"
 #include "GRootCommands.h"
+#include "GCutG.h"
 #include "GH2I.h"
 #include "GH2D.h"
 #include "GH1D.h"
@@ -60,17 +61,28 @@ enum MyArrowPress{
 
 ClassImp(GMarker)
 
-  void GMarker::Copy(TObject &object) const {
-    TObject::Copy(object);
-    ((GMarker&)object).x      = x;
-    ((GMarker&)object).y      = y;
-    ((GMarker&)object).localx = localx;
-    ((GMarker&)object).localy = localy;
-    ((GMarker&)object).linex  = 0;
-    ((GMarker&)object).liney  = 0;
-    ((GMarker&)object).binx  = binx;
-    ((GMarker&)object).biny  = biny;
-  }
+void GMarker::Copy(TObject &object) const {
+  TObject::Copy(object);
+  ((GMarker&)object).x      = x;
+  ((GMarker&)object).y      = y;
+  ((GMarker&)object).localx = localx;
+  ((GMarker&)object).localy = localy;
+  ((GMarker&)object).linex  = 0;
+  ((GMarker&)object).liney  = 0;
+  ((GMarker&)object).binx  = binx;
+  ((GMarker&)object).biny  = biny;
+}
+
+
+void GMarker::Print(Option_t *opt) const {
+  printf("--- Marker 0x%p ---\n",(void*)this);
+  printf("Pixel Space:   (%i,%i)\n",x,y);
+  printf("Bin Space:     (%i,%i)\n",binx,biny);
+  printf("Value Space:   (%.02f,%.02f)\n",localx,localy);
+  printf("-------------------\n");
+}
+
+
 /*
    ClassImp(GPopup)
 
@@ -154,6 +166,16 @@ GCanvas::GCanvas(const char* name, const char* title, Int_t wtopx, Int_t wtopy, 
     GCanvasInit();
     fGuiEnabled = gui;
   }
+
+
+GCanvas::GCanvas(Int_t cols,Int_t rows,Bool_t build)
+  :TCanvas(build)  {
+    GCanvasInit();
+    this->Divide(cols,rows);
+    this->cd(1);
+  }
+
+
 
 
 GCanvas::~GCanvas() {
@@ -319,7 +341,6 @@ bool GCanvas::CycleBackgroundSubtraction() {
   switch(fBackgroundMode){
     case kNoBackground:
       fBackgroundMode = kRegionBackground;
-      printf("hello??\n");
       Prompt();
       color = kBlue;
       break;
@@ -524,8 +545,10 @@ bool GCanvas::HandleMouseShiftPress(Int_t event,Int_t x,Int_t y) {
   TH1 *hist = 0;
   TIter iter(gPad->GetListOfPrimitives());
   while(TObject *obj = iter.Next()) {
-    if(obj->InheritsFrom(TH1::Class()))
+    if(obj->InheritsFrom(TH1::Class())) {
       hist = (TH1*)obj;
+      break;
+    }
   }
   if(!hist)
     return false;
@@ -534,11 +557,11 @@ bool GCanvas::HandleMouseShiftPress(Int_t event,Int_t x,Int_t y) {
   switch(hist->GetDimension()) {
     case 1:
       {
-        if(hist->InheritsFrom(GH1D::Class())) {
-          new GCanvas();
-          ((GH1D*)hist)->GetParent()->Draw("colz");
-          return true;
-        }
+        //if(hist->InheritsFrom(GH1D::Class())) {
+        //  new GCanvas();
+        //  ((GH1D*)hist)->GetParent()->Draw("colz");
+        //  return true;
+        //}
         std::vector<TH1*> hists = FindHists();
         new GCanvas();
         //options.Append("HIST");
@@ -817,6 +840,42 @@ bool GCanvas::Process1DKeyboardPress(Event_t *event,UInt_t *keysym) {
           edited = true;
       }
       break;
+    case kKey_F: 
+      //this->GetListOfPrimitives()->Print();
+      if(hists.back()->IsA() != GH1D::Class())
+        break;
+      {
+      GH1D *ghist = (GH1D*)hists.back();
+      GetContextMenu()->Action(ghist,ghist->Class()->GetMethodAny("DoPhotoPeakFit"));
+      {
+        double x1 = ghist->GetLastXlow();
+        double x2 = ghist->GetLastXhigh();
+        TIter iter(this->GetCanvas()->GetListOfPrimitives());
+        while(TObject *obj = iter.Next()) {
+          if(obj->InheritsFrom(TPad::Class())) {
+            TPad *pad = (TPad*)obj;
+            TIter iter2(pad->GetListOfPrimitives());
+            while(TObject *obj2=iter2.Next()) {
+              if(obj2->InheritsFrom(TH1::Class())) {
+                GH1D* hist = (GH1D*)obj2;
+                hist->DoPhotoPeakFit(x1,x2);
+                pad->Modified();
+                pad->Update();
+              }
+            }
+          }
+        }
+
+        //for(int i=0;i<hists.size()-1;i++)   // this doesn't work, set range needs values not bins.   pcb.
+        //   hists.at(i)->GetXaxis()->SetRangeUser(hists.back()->GetXaxis()->GetFirst(),hists.back()->GetXaxis()->GetLast());
+
+      }
+      edited = true;
+      }
+      break;
+
+
+
 
     case kKey_g:
       if(GausFit(hists.back(),fMarkers.at(fMarkers.size()-2)->localx,fMarkers.back()->localx))
@@ -962,6 +1021,15 @@ bool GCanvas::Process1DKeyboardPress(Event_t *event,UInt_t *keysym) {
             }
             double bg_value_low  = ghist->GetXaxis()->GetBinCenter(bg_binlow);
             double bg_value_high = ghist->GetXaxis()->GetBinCenter(bg_binhigh);
+            {
+              double epsilon = 16*(std::nextafter(value_low, INFINITY) - value_low);
+              bg_value_low += epsilon;
+            }
+
+            {
+              double epsilon = 16*(value_high - std::nextafter(value_high, -INFINITY));
+              bg_value_high -= epsilon;
+            }
             // Using binhigh-1 instead of binhigh,
             //  because the ProjectionX/Y functions from ROOT use inclusive bin numbers,
             //  rather than exclusive.
@@ -1145,16 +1213,16 @@ bool GCanvas::Process2DKeyboardPress(Event_t *event,UInt_t *keysym) {
         break;
       {
         double x1 = fMarkers.at(fMarkers.size()-1)->localx;
-        double y1 = fMarkers.at(fMarkers.size()-1)->localy;
+        //double y1 = fMarkers.at(fMarkers.size()-1)->localy;
         double x2 = fMarkers.at(fMarkers.size()-2)->localx;
-        double y2 = fMarkers.at(fMarkers.size()-2)->localy;
+        //double y2 = fMarkers.at(fMarkers.size()-2)->localy;
         if(x1>x2)
           std::swap(x1,x2);
-        if(y1>y2)
-          std::swap(y1,y2);
+        //if(y1>y2)
+        //  std::swap(y1,y2);
         for(unsigned int i=0;i<hists.size();i++){
           hists.at(i)->GetXaxis()->SetRangeUser(x1,x2);
-          hists.at(i)->GetYaxis()->SetRangeUser(y1,y2);
+          //hists.at(i)->GetYaxis()->SetRangeUser(y1,y2);
         }
       }
       edited = true;
@@ -1194,7 +1262,7 @@ bool GCanvas::Process2DKeyboardPress(Event_t *event,UInt_t *keysym) {
         break;
       {
         static int cutcounter=0;
-        TCutG *cut = new TCutG(Form("_cut%i",cutcounter++),9);
+        GCutG *cut = new GCutG(Form("_cut%i",cutcounter++),9);
         //cut->SetVarX("");
         //cut->SetVarY("");
         //
@@ -1268,47 +1336,49 @@ bool GCanvas::Process2DKeyboardPress(Event_t *event,UInt_t *keysym) {
                  }
                  break;
     case kKey_r:
-                 if(GetNMarkers()<2)
-                   break;
-                 {
-                   if(fMarkers.at(fMarkers.size()-1)->localy < fMarkers.at(fMarkers.size()-2)->localy)
-                     for(unsigned int i=0;i<hists.size();i++)
-                       hists.at(i)->GetYaxis()->SetRangeUser(fMarkers.at(fMarkers.size()-1)->localy,fMarkers.at(fMarkers.size()-2)->localy);
-                   else
-                     for(unsigned int i=0;i<hists.size();i++)
-                       hists.at(i)->GetXaxis()->SetRangeUser(fMarkers.at(fMarkers.size()-2)->localy,fMarkers.at(fMarkers.size()-1)->localy);
-                 }
-                 edited = true;
-                 RemoveMarker("all");
-                 break;
+      if(GetNMarkers()<2)
+        break;
+      {
+        //fMarkers.at(fMarkers.size()-1)->Print();
+        //fMarkers.at(fMarkers.size()-2)->Print();
+        double y1 = fMarkers.at(fMarkers.size()-1)->localy;
+        double y2 = fMarkers.at(fMarkers.size()-2)->localy;
+        if(y1>y2)
+          std::swap(y1,y2);
+        for(unsigned int i=0;i<hists.size();i++)
+          hists.at(i)->GetYaxis()->SetRangeUser(y1,y2);
+      }
+      edited = true;
+      RemoveMarker("all");
+      break;
     case kKey_R:
-                 //this->GetListOfPrimitives()->Print();
-                 GetContextMenu()->Action(hists.back()->GetYaxis(),hists.back()->GetYaxis()->Class()->GetMethodAny("SetRangeUser"));
-                 {
-                   double y1 = hists.back()->GetXaxis()->GetBinCenter(hists.back()->GetYaxis()->GetFirst());
-                   double y2 = hists.back()->GetXaxis()->GetBinCenter(hists.back()->GetYaxis()->GetLast());
-                   TIter iter(this->GetListOfPrimitives());
-                   while(TObject *obj = iter.Next()) {
-                     if(obj->InheritsFrom(TPad::Class())) {
-                       TPad *pad = (TPad*)obj;
-                       TIter iter2(pad->GetListOfPrimitives());
-                       while(TObject *obj2=iter2.Next()) {
-                         if(obj2->InheritsFrom(TH1::Class())) {
-                           TH1* hist = (TH1*)obj2;
-                           hist->GetYaxis()->SetRangeUser(y1,y2);
-                           pad->Modified();
-                           pad->Update();
-                         }
-                       }
-                     }
-                   }
+      //this->GetListOfPrimitives()->Print();
+      GetContextMenu()->Action(hists.back()->GetYaxis(),hists.back()->GetYaxis()->Class()->GetMethodAny("SetRangeUser"));
+      {
+        double y1 = hists.back()->GetYaxis()->GetBinCenter(hists.back()->GetYaxis()->GetFirst());
+        double y2 = hists.back()->GetYaxis()->GetBinCenter(hists.back()->GetYaxis()->GetLast());
+        TIter iter(this->GetListOfPrimitives());
+        while(TObject *obj = iter.Next()) {
+          if(obj->InheritsFrom(TPad::Class())) {
+            TPad *pad = (TPad*)obj;
+            TIter iter2(pad->GetListOfPrimitives());
+            while(TObject *obj2=iter2.Next()) {
+              if(obj2->InheritsFrom(TH2::Class())) {
+                TH2* hist = (TH2*)obj2;
+                hist->GetYaxis()->SetRangeUser(y1,y2);
+                pad->Modified();
+                pad->Update();
+              }
+            }
+          }
+        }
 
-                   //for(int i=0;i<hists.size()-1;i++)   // this doesn't work, set range needs values not bins.   pcb.
-                   //   hists.at(i)->GetXaxis()->SetRangeUser(hists.back()->GetXaxis()->GetFirst(),hists.back()->GetXaxis()->GetLast());
+        //for(int i=0;i<hists.size()-1;i++)   // this doesn't work, set range needs values not bins.   pcb.
+        //   hists.at(i)->GetXaxis()->SetRangeUser(hists.back()->GetXaxis()->GetFirst(),hists.back()->GetXaxis()->GetLast());
 
-                 }
-                 edited = true;
-                 break;
+      }
+      edited = true;
+      break;
 
     case kKey_x: {
                    GH2D* ghist = NULL;
@@ -1399,35 +1469,76 @@ bool GCanvas::Process2DKeyboardPress(Event_t *event,UInt_t *keysym) {
                    }
                  }
                  break;
-
-
-
-
-    case kKey_l:
     case kKey_z:
-                 if(GetLogz()){
-                   // Show full y range, not restricted to positive values.
-                   for(unsigned int i=0;i<hists.size();i++) {
-                     hists.at(i)->GetYaxis()->UnZoom();
-                   }
-                   TVirtualPad *cpad = gPad;
-                   this->cd();
-                   gPad->SetLogz(0);
-                   cpad->cd();
-                 } else {
-                   // Only show plot from 0 up when in log scale.
-                   for(unsigned int i=0;i<hists.size();i++) {
-                     if(hists.at(i)->GetYaxis()->GetXmin()<0) {
-                       hists.at(i)->GetYaxis()->SetRangeUser(0,hists.at(i)->GetYaxis()->GetXmax());
-                     }
-                   }
-                   TVirtualPad *cpad = gPad;
-                   this->cd();
-                   gPad->SetLogz(1);
-                   cpad->cd();
-                 }
-                 edited = true;
-                 break;
+      //printf("in lower case z\n");
+      if(gPad->GetLogz()){
+        //printf("\t GetLogZ() = true;\n");
+        // Show full z range, not restricted to positive values.
+        //for(unsigned int i=0;i<hists.size();i++) {
+        //  hists.at(i)->GetYaxis()->UnZoom();
+        //}
+        //TVirtualPad *cpad = gPad;
+        //this->cd();
+        gPad->SetLogz(0);
+        //cpad->cd();
+      } else {
+        //printf("\t GetLogZ() = false;\n");
+        // Only show plot from 0 up when in log scale.
+        //for(unsigned int i=0;i<hists.size();i++) {
+        //  if(hists.at(i)->GetZaxis()->GetXmin()<0) {
+        //    hists.at(i)->GetZaxis()->SetRangeUser(0,hists.at(i)->GetYaxis()->GetXmax());
+        //  }
+        //}
+        //TVirtualPad *cpad = gPad;
+        //this->cd();
+        gPad->SetLogz(1);
+        //cpad->cd();
+      }
+      edited = true;
+      break;
+    case kKey_Z:
+      //printf("in upper case Z\n");
+      {
+        TIter iter(this->GetListOfPrimitives());
+        bool set = !gPad->GetLogz();
+        //int counter = 0;
+        while(TObject *obj = iter.Next()) {
+          if(obj->InheritsFrom(TPad::Class())) {
+            TPad *pad = (TPad*)obj;
+            TIter iter2(pad->GetListOfPrimitives());
+            while(TObject *obj2=iter2.Next()) {
+              if(obj2->InheritsFrom(TH2::Class())) {
+                //TH2* hist = (TH2*)obj2;
+                if(set && !pad->GetLogz()) {                
+                  //printf("\t %i set=true && logz=false;\n",counter++);
+                  TVirtualPad *cpad = gPad;
+                  pad->cd();
+                  gPad->SetLogz(1);
+                  cpad->cd();
+                  edited = true;
+                } else if(!set && pad->GetLogz()) {
+                  //printf("\t %i set=false && logz=true;\n",counter++);
+                  TVirtualPad *cpad = gPad;
+                  pad->cd();
+                  gPad->SetLogz(0);
+                  cpad->cd();
+                  edited = true;
+                }
+              }
+            }
+          }
+        }
+
+        //for(int i=0;i<hists.size()-1;i++)   // this doesn't work, set range needs values not bins.   pcb.
+        //   hists.at(i)->GetXaxis()->SetRangeUser(hists.back()->GetXaxis()->GetFirst(),hists.back()->GetXaxis()->GetLast());
+
+      }
+      edited = true;
+      break;
+
+
+
+
   };
   return edited;
 }

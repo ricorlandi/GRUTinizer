@@ -68,7 +68,7 @@ CFLAGS    += $(shell root-config --cflags)
 CFLAGS    += -MMD -MP $(INCLUDES)
 LINKFLAGS += -Llib $(addprefix -l,$(LIBRARY_NAMES)) -Wl,-rpath,\$$ORIGIN/../lib
 LINKFLAGS += $(shell root-config --glibs) -lSpectrum -lPyROOT -lMinuit
-LINKFLAGS := $(LINKFLAGS_PREFIX) $(LINKFLAGS) $(LINKFLAGS_SUFFIX) $(CFLAGS)
+LINKFLAGS := $(LINKFLAGS_PREFIX) $(LINKFLAGS) $(LINKFLAGS_SUFFIX)
 
 ROOT_LIBFLAGS := $(shell root-config --cflags)
 
@@ -99,8 +99,9 @@ run_and_test =@printf "%b%b%b" " $(3)$(4)$(5)" $(notdir $(2)) "$(NO_COLOR)\r";  
                 rm -f $(2).log $(2).error
 endif
 
-all: include/GVersion.h $(EXECUTABLES) $(LIBRARY_OUTPUT) pcm_files bin/grutinizer-config bin/gadd_fast.py\
-     $(HISTOGRAM_SO) $(FILTER_SO) extras
+all: include/GVersion.h $(EXECUTABLES) $(LIBRARY_OUTPUT) pcm_files \
+           bin/grutinizer-config bin/gadd_fast.py\
+           $(HISTOGRAM_SO) $(FILTER_SO) extras lib/libAllGrutinizer.so
 	@printf "$(OK_COLOR)Compilation successful, $(WARN_COLOR)woohoo!$(NO_COLOR)\n"
 
 pcm_files:
@@ -110,6 +111,7 @@ docs:
 
 bin/%: util/% | bin
 	@ln -sf ../$< $@
+
 
 bin/grutinizer: $(MAIN_O_FILES) | $(LIBRARY_OUTPUT) pcm_files bin
 	$(call run_and_test,$(CPP) $^ -o $@ $(LINKFLAGS) $(RCNPLINKFLAGS),$@,$(COM_COLOR),$(COM_STRING),$(OBJ_COLOR) )
@@ -122,6 +124,9 @@ bin lib:
 
 include/GVersion.h: .git/HEAD .git/index util/gen_version.sh
 	$(call run_and_test,util/gen_version.sh,$@,$(COM_COLOR),$(COM_STRING),$(OBJ_COLOR) )
+
+lib/libAllGrutinizer.so: $(LIBRARY_OUTPUT)
+	$(call run_and_test,echo | $(CPP) -x c++ - -fPIC -o $@ $(SHAREDSWITCH)$(notdir $@) $(LINKFLAGS) $(RCNPLINKFLAGS),$@,$(BLD_COLOR),$(BLD_STRING),$(OBJ_COLOR) )
 
 lib/lib%.so: .build/histos/%.o | lib
 	$(call run_and_test,$(CPP) -fPIC $^ $(SHAREDSWITCH)lib$*.so $(ROOT_LIBFLAGS) -o $@,$@,$(BLD_COLOR),$(BLD_STRING),$(OBJ_COLOR) )

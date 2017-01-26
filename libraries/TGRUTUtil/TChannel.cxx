@@ -9,6 +9,7 @@
 #include <utility>
 #include <stdexcept>
 
+#include "TBuffer.h"
 #include "TRandom.h"
 
 #include "GRootFunctions.h"

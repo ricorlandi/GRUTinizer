@@ -449,7 +449,7 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
 
             // doppler reconstruction
             auto Ecm = core_hit.GetDoppler(beta,pos::core_only);
-            auto ejectile = hit.GetEjectileVector();
+            auto ejectile = hit.GetEjectileVector(a_offset,b_offset);
             ejectile.SetMag(hit.GetMomentum());
             auto Ecm_particle = core_hit.GetDoppler(beta,pos::core_only,ejectile);
             auto Elab = core_hit.GetCorrectedEnergy();
@@ -521,6 +521,7 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
                 double A=0,B=0;
                 std::tie(A,B) = hit.Raytrace();
                 hist(true,obj,dirname,"B[A]",500,0,0,A,500,0,0,B);
+                hist(true,obj,dirname,"Bcor[Acor]",500,0,0,A-a_offset,500,0,0,B-b_offset);
 
                 hist(true,obj,dirname,"Momentum",1000,2400,2800,hit.GetMomentum());
                 auto p_gamma = core_hit.GetMomentumVector(pos::core_only);
