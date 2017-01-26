@@ -126,7 +126,7 @@ include/GVersion.h: .git/HEAD .git/index util/gen_version.sh
 	$(call run_and_test,util/gen_version.sh,$@,$(COM_COLOR),$(COM_STRING),$(OBJ_COLOR) )
 
 lib/libAllGrutinizer.so: $(LIBRARY_OUTPUT)
-	$(call run_and_test,echo | $(CPP) -x c++ - -fPIC -o $@ $(SHAREDSWITCH)$(notdir $@) $(LINKFLAGS),$@,$(BLD_COLOR),$(BLD_STRING),$(OBJ_COLOR) )
+	$(call run_and_test,echo | $(CPP) -x c++ - -fPIC -o $@ $(SHAREDSWITCH)$(notdir $@) $(LINKFLAGS) $(RCNPLINKFLAGS),$@,$(BLD_COLOR),$(BLD_STRING),$(OBJ_COLOR) )
 
 lib/lib%.so: .build/histos/%.o | lib
 	$(call run_and_test,$(CPP) -fPIC $^ $(SHAREDSWITCH)lib$*.so $(ROOT_LIBFLAGS) -o $@,$@,$(BLD_COLOR),$(BLD_STRING),$(OBJ_COLOR) )
