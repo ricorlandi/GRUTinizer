@@ -129,8 +129,8 @@ TVector3 TGrandRaidenHit::GetEjectileVector(double aoffset, double boffset) {
 }
 
 
-TVector3 TGrandRaidenHit::ReconstructInvariant(const TVector3& gamma) {
-  auto ejectile = GetEjectileVector();
+TVector3 TGrandRaidenHit::ReconstructInvariant(const TVector3& gamma, double aoffset, double boffset /* in mrad */) {
+  auto ejectile = GetEjectileVector(aoffset,boffset);
   ejectile.SetMag(GetMomentum());
   return ejectile + gamma;
 }

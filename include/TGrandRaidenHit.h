@@ -30,7 +30,7 @@ class TGrandRaidenHit : public TDetectorHit {
     void     BuildFrom();
 
     TVector3 GetEjectileVector(double aoffset=0., double boffset=0. /* in mrad */);
-    TVector3 ReconstructInvariant(const TVector3& gamma);
+    TVector3 ReconstructInvariant(const TVector3& gamma,double aoffset=0., double boffset=0. /* in mrad */);
     double   GetMomentum();
 
     std::pair<double,double> Raytrace();

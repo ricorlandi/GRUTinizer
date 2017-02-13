@@ -35,7 +35,7 @@ void MakeHistograms(TRuntimeObjects& obj) {
 // ----------------------------------------------------------------------
 
 void InitTarget() {
-  size_t target_index = GValue::Value("Target");
+ size_t target_index = GValue::Value("Target");
   switch(target_index) {
   case 1:
     m_target = c12.GetMass();
@@ -296,7 +296,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       // }
 
 
-      auto ejectile = hit.GetEjectileVector();
+      auto ejectile = hit.GetEjectileVector(a_offset,b_offset);
       // missing mass
       ejectile.SetMag(hit.GetMomentum());
       hist(false,obj,"MissingMass","ThetaLab",300,0,0,ejectile.Theta());
@@ -311,9 +311,10 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
       std::tie(theta_cm,Ex,J_L) = kine_2b(m_projectile,m_target,m_projectile,m_target,ke_projectile,ejectile.Theta(), ke_ejectile);
 
+      hist(true,obj,"MissingMass","ThetaCM",300,0,0.15,theta_cm);
+      hist(true,obj,"MissingMass","ReconstructedEx",600,5,65,Ex);
+      hist(true,obj,"MissingMass","ThetaLab[MMEx]",600,5,65,Ex,300,0,0.15,ejectile.Theta());
 
-      hist(false,obj,"MissingMass","ThetaCM",300,0,0,theta_cm);
-      hist(false,obj,"MissingMass","ReconstructedEx",1024,0,0,Ex);
       if (ejectile.Theta() < 0.01) {
         hist(false,obj,"MissingMass","ReconstructedEx_0_10_mrad",1024,0,0,Ex);
       }
@@ -442,6 +443,9 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
             char core_leaf = core_hit.GetLeaf();
             string chan = core_leaf + std::to_string(core_hit.GetSegnum());
             size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+            if (crystal_id > 50) { continue; }
+
+
             bool bgo_hit = false;
             auto cagratime = core_hit.Timestamp();
             auto tdiff = cagratime-grtime;
@@ -459,11 +463,9 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
             double theta_cm=0,mmEx=0,J_L=0;
             std::tie(theta_cm,mmEx,J_L) = kine_2b(m_projectile,m_target,m_projectile,m_target,ke_projectile,ejectile.Theta(), ke_ejectile);
 
-            hist(true,obj,dirname,"MissingMassThetaCM",300,0,0,theta_cm);
-            hist(true,obj,dirname,"MissingMassEx",600,5,65,mmEx);
 
             hist(true,obj,dirname,"Ecm_particle[Elab]",
-                              2500,0,10000,Elab,
+                 2500,0,10000,Elab,
                               2500,0,10000,Ecm_particle);
             hist(true,obj,dirname,"EdopplerSum",7000,0,21000,Ecm);
             hist(true,obj,dirname,"EdopplerParticleSum",7000,0,21000,Ecm_particle);
@@ -472,10 +474,6 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
               hist(true,obj,dirname,"A[X]_gateYcor",1200,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
               // gate on prompt event timing peak
               if (tdiff>=252 && tdiff<=260) { // 9
-                int detector = core_hit.GetDetnum();
-                char core_leaf = core_hit.GetLeaf();
-                string chan = core_leaf + std::to_string(core_hit.GetSegnum());
-                size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
 
                 // cagra core energy summary vs. rcnp.GR_X(0)
                 hist(true,obj,dirname,"EgamLab_vs_Ex",
@@ -517,6 +515,10 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
 
                 bgo_hit = false;
 
+
+                hist(true,obj,dirname,"MissingMassThetaCM",300,0,0,theta_cm);
+                hist(true,obj,dirname,"MissingMassEx",600,5,65,mmEx);
+
                 // raytracing
                 double A=0,B=0;
                 std::tie(A,B) = hit.Raytrace();
@@ -524,11 +526,39 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
                 hist(true,obj,dirname,"Bcor[Acor]",500,0,0,A-a_offset,500,0,0,B-b_offset);
 
                 hist(true,obj,dirname,"Momentum",1000,2400,2800,hit.GetMomentum());
+
+
+                // auto p_gamma = core_hit.GetMomentumVector(pos::core_only);
+                // auto p_invariant = hit.ReconstructInvariant(p_gamma);
+                // auto m_invariant = m_projectile + Li6Ex;
+                // auto e_invariant = TMath::Sqrt(p_invariant.Mag()*p_invariant.Mag() + m_invariant*m_invariant);
+                // auto ke_invariant = e_invariant - m_invariant;
+
                 auto p_gamma = core_hit.GetMomentumVector(pos::core_only);
                 auto p_invariant = hit.ReconstructInvariant(p_gamma);
                 auto m_invariant = m_projectile + Li6Ex;
                 auto e_invariant = TMath::Sqrt(p_invariant.Mag()*p_invariant.Mag() + m_invariant*m_invariant);
                 auto ke_invariant = e_invariant - m_invariant;
+
+
+                auto e_gamma = core_hit.GetCorrectedEnergy()/1000;
+                hist(true,obj,"inv_tests","e_gamma",1000,0,0,e_gamma);
+                auto p_ejectile = hit.GetEjectileVector(a_offset,b_offset); p_ejectile.SetMag(hit.GetMomentum());
+                hist(true,obj,"inv_tests","p_ejectile",1000,0,0,p_ejectile.Mag());
+                auto p_inv = p_ejectile + p_gamma;
+                hist(true,obj,"inv_tests","p_inv",1000,0,0,p_inv.Mag());
+
+
+                auto e_inv = std::sqrt(p_ejectile.Mag2() + std::pow(m_projectile,2)) + e_gamma;
+                hist(true,obj,"inv_tests","e_inv",1000,0,0,e_inv);
+                auto m_inv = std::sqrt(std::pow(e_inv,2)-p_inv.Mag2());
+                hist(true,obj,"inv_tests","m_inv",1000,0,0,m_inv);
+                auto ex_inv = m_inv - m_projectile;
+                hist(true,obj,dirname,"inv_mass_ex",1000,0,10,ex_inv);
+
+
+
+
                 hist(true,obj,dirname,"KE_invariant",1024,500,600,ke_invariant);
                 hist(true,obj,dirname,"p_invariant",1024,2400,2800,p_invariant.Mag());
                 auto theta_lab = p_invariant.Theta();
@@ -545,6 +575,29 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
                   hist(true,obj,dirname+"_6LiEx_gate","EgamLab[Ex]",
                                     600,5,65,Ex,
                                     5500,0,22000,core_hit.GetCorrectedEnergy());
+
+                  hist(true,obj,dirname+"_6LiEx_gate","MissingMassEx",600,5,65,mmEx);
+                  hist(true,obj,dirname+"_6LiEx_gate","inv_mass_ex",200,0,10,ex_inv);
+
+
+                  double gammafac = 1/(sqrt(1-pow(beta,2)));
+                  auto Elab_gam = Li6Ex/(gammafac*(1-beta*p_gamma.CosTheta()));
+                  auto adj_p_gamma = p_gamma;
+                  adj_p_gamma.SetMag(Elab_gam);
+                  auto adj_p_inv = p_ejectile + adj_p_gamma;
+                  hist(true,obj,"inv_tests","adj_p_inv",1000,0,0,adj_p_inv.Mag());
+                  auto adj_e_inv = std::sqrt(p_ejectile.Mag2() + std::pow(m_projectile,2)) + Elab_gam;
+                  hist(true,obj,"inv_tests","adj_e_inv",1000,0,0,adj_e_inv);
+                  auto adj_m_inv = std::sqrt(std::pow(adj_e_inv,2)-adj_p_inv.Mag2());
+                  hist(true,obj,"inv_tests","adj_m_inv",1000,0,0,adj_m_inv);
+                  auto adj_ex_inv = adj_m_inv - m_projectile;
+                  hist(true,obj,"inv_tests","adj_inv_mass_ex",1000,0,10,adj_ex_inv);
+
+
+
+
+
+
 
                   if (ejectile.Theta() < 0.01) {
                     hist(true,obj,dirname+"_6LiEx_gate","ReconstructedEx_0_10_mrad",600,5,65,Ex);
@@ -681,7 +734,7 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 
         dirname = "ParticleGamma";
         auto Ecm = core_hit.GetDoppler(beta,pos::core_only);
-        auto ejectile = hit.GetEjectileVector();
+        auto ejectile = hit.GetEjectileVector(a_offset,b_offset);
         auto Ecm_particle = core_hit.GetDoppler(beta,pos::core_only,ejectile);
         auto Elab = core_hit.GetCorrectedEnergy();
 

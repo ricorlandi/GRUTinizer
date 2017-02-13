@@ -4,6 +4,8 @@
 #include <utility>
 #include <algorithm>
 #include <cassert>
+#include <cmath>
+
 
 #include "TH1.h"
 #include "TH2.h"
@@ -43,8 +45,8 @@ static TNucleus fe56("56Fe");
 static TNucleus nb93("93Nb");
 static TNucleus sn124("124Sn");
 
-static const double a_offset = GValue::Value("A_Offset");
-static const double b_offset = GValue::Value("B_Offset");
+static const double a_offset = std::isnan(GValue::Value("A_Offset")) ? 0 : GValue::Value("A_Offset");
+static const double b_offset = std::isnan(GValue::Value("B_Offset")) ? 0 : GValue::Value("B_Offset");
 
 static const double m_projectile = li6.GetMass();
 static const double eloss = GValue::Value("EnergyLoss");
