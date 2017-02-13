@@ -101,7 +101,7 @@ class MainWindow(object):
 
     def _load_default_style(self):
         style = ROOT.TStyle("GRUTStyle","")
-        #style.SetOptStat(1001111)
+        style.SetOptStat(1001111)
         style.SetPalette(1)
         style.SetTitleColor(ROOT.kBlue)
         style.SetStatTextColor(ROOT.kBlue)
@@ -110,15 +110,10 @@ class MainWindow(object):
         style.SetOptFit(1111)
         style.SetPadBorderSize(1)
         style.SetPadBorderMode(1)
-        style.SetPadTickX(1)            #
-        style.SetPadTickY(1)            #
-        style.SetCanvasColor(0)         #
-        style.SetTitleFillColor(0)      #
-        style.SetTickLength(-0.01,"X")  #
-        style.SetTickLength(-0.01,"Y")  #
-        style.SetStatColor(0)           #
-        style.SetStatBorderSize(1)      #
-        style.SetPalette(51)            #
+        # load user defined settings if they exist
+        user_style = os.path.dirname(os.path.realpath(__file__))+'/style.py'
+        if os.path.isfile(user_style):
+            execfile(user_style)
         ROOT.gROOT.SetStyle("GRUTStyle")
         ROOT.gROOT.ForceStyle()
 
