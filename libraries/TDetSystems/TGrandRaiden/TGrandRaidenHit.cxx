@@ -12,6 +12,9 @@ std::vector<double> TGrandRaidenHit::acoefs;
 std::vector<double> TGrandRaidenHit::bcoefs;
 unsigned int TGrandRaidenHit::xdegree = 3, TGrandRaidenHit::adegree = 1, TGrandRaidenHit::ydegree = 1, TGrandRaidenHit::bdegree = 1;
 
+Double_t TGrandRaidenHit::aoffset = std::sqrt(-1);
+Double_t TGrandRaidenHit::boffset = std::sqrt(-1);
+
 
 TGrandRaidenHit::TGrandRaidenHit() : vector(1.,1.,1.) {
   madc1=0; madc2=0; madc3=0;
@@ -107,19 +110,17 @@ void TGrandRaidenHit::SetRaytraceParams(std::vector<double> apar, std::vector<do
   bcoefs = std::move(bpar);
 }
 
-std::pair<double,double> TGrandRaidenHit::Raytrace() {
-  return raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0),rcnp.GR_PH(0));
+std::pair<double,double> TGrandRaidenHit::Raytrace(bool apply_offsets) {
+  return raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0),rcnp.GR_PH(0),apply_offsets);
 }
-TVector3 TGrandRaidenHit::GetEjectileVector(double aoffset, double boffset) {
+TVector3 TGrandRaidenHit::GetEjectileVector(bool apply_offsets) {
 
   double thetax=0,thetay=0; // A,B
-  std::tie(thetax,thetay) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0),rcnp.GR_PH(0));
-  thetax -= aoffset;
-  thetay -= boffset;
+  std::tie(thetax,thetay) = raytrace(rcnp.GR_X(0),rcnp.GR_TH(0),rcnp.GR_Y(0),rcnp.GR_PH(0),apply_offsets);
   thetax/=1000; // convert to radian from mrad
   thetay/=1000; // convert to radian from mrad
   auto phi = TMath::ATan2(TMath::Sin(thetay),TMath::Sin(thetax));
-  auto theta = TMath::ASin(TMath::Sqrt( TMath::Power(TMath::Sin(thetax),2) + TMath::Power(TMath::Sin(thetay),2) ));
+  auto theta = TMath::ATan(TMath::Sqrt( TMath::Power(TMath::Tan(thetax),2) + TMath::Power(TMath::Tan(thetay),2) ));
 
   vector.SetTheta(theta);
   vector.SetPhi(phi);
@@ -129,8 +130,8 @@ TVector3 TGrandRaidenHit::GetEjectileVector(double aoffset, double boffset) {
 }
 
 
-TVector3 TGrandRaidenHit::ReconstructInvariant(const TVector3& gamma, double aoffset, double boffset /* in mrad */) {
-  auto ejectile = GetEjectileVector(aoffset,boffset);
+TVector3 TGrandRaidenHit::ReconstructInvariant(const TVector3& gamma, bool apply_offsets) {
+  auto ejectile = GetEjectileVector(apply_offsets);
   ejectile.SetMag(GetMomentum());
   return ejectile + gamma;
 }
@@ -141,7 +142,7 @@ double TGrandRaidenHit::GetMomentum() {
   return momentum;
 }
 
-std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y, double b) {
+std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y, double b, bool apply_offset) {
   double sum = 0;
   double count = 0;
   double A = 0;
@@ -156,6 +157,9 @@ std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y,
   }
   A=sum;
   sum=count=0;
+
+  // hole arrangement is reversed from sieve slit points
+  A *= -1;
 
   // non-dispersive angle raytrace
   for (auto i=0u; i<= xdegree; i++) {
@@ -176,7 +180,10 @@ std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y,
   }
   B=sum;
 
-  return std::pair<double,double>(A,B);
+
+  double a_offset = 0, b_offset = 0;
+  std::tie(a_offset,b_offset) = TGrandRaidenHit::GetAngleOffsets();
+  return std::pair<double,double>(A-a_offset*1000,B-b_offset*1000);
 }
 
 void TGrandRaidenHit::Copy(TObject& obj) const {
