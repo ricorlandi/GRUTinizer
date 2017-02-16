@@ -283,6 +283,20 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       hist(false,obj,dirname,"dE3[A]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE3());
 
 
+      {
+        auto ejectile = hit.GetEjectileVector(true);
+        // missing mass
+        ejectile.SetMag(hit.GetMomentum());
+        auto p_ejectile = ejectile.Mag();
+        auto e_ejectile = TMath::Sqrt(p_ejectile*p_ejectile+m_projectile*m_projectile);
+        auto ke_ejectile = e_ejectile - m_projectile;
+        double theta_cm=0,Ex=0,J_L=0;
+
+        std::tie(theta_cm,Ex,J_L) = kine_2b(m_projectile,m_target,m_projectile,m_target,ke_projectile,ejectile.Theta(), ke_ejectile);
+
+        hist(true,obj,"MissingMass","ThetaLab[MMEx]",600,5,65,Ex,300,0,0.15,ejectile.Theta());
+      }
+
       // raytracing
       double A=0,B=0;
       std::tie(A,B) = hit.Raytrace(true);
