@@ -16,11 +16,57 @@
 
 std::map<int,TVector3> TCagra::detector_positions;
 std::map<int,size_t> TCagra::crystal_ids;
+std::map<int,size_t> TCagra::segment_ids;
 bool TCagra::positions_loaded = false;
 
 TCagra::TCagra(){
   Clear();
   LoadDetectorPositions();
+
+  static bool load_segments = true;
+  if (load_segments) {
+    load_segments = false; // only perform this loop assigment once
+
+    std::vector<int> detnums(16);
+    std::iota(detnums.begin(),detnums.end(),1);
+    std::vector<int> yale_seg = { 1, 2, 3 };
+    std::vector<int> imp_core = { 1, 2, 3, 4 };
+    std::vector<int> imp_seg = { 1, 2, 3, 4 };
+
+    // TODO: Fix.
+    // Currently hard code detectors 1-14 as yale
+    // 15 and 16 as IMP. Probably not true for _all_ exp.
+
+    int segment_count = 0;
+
+    // yale type
+    for (auto i=0u; i<detnums.size()-2; i++) {
+      for (auto& seg : yale_seg) {
+        int index = detnums[i]*10000 + seg;
+        if (segment_ids.count(index) == 0) {
+          segment_ids[index] = segment_count++;
+        } else {
+          throw std::runtime_error("Logic error in building segment ids.");
+        }
+      }
+    }
+    //imp type
+    for (auto i=detnums.size()-2; i<detnums.size(); i++) {
+      for (auto& core : imp_core) {
+        for (auto& seg : imp_seg) {
+          int index = detnums[i]*10000 + core*100 + seg;
+          if (segment_ids.count(index) == 0) {
+            segment_ids[index] = segment_count++;
+          } else {
+            throw std::runtime_error("Logic error in building segment ids.");
+          }
+        }
+      }
+    }
+
+
+
+  }
 }
 
 TCagra::~TCagra() {
@@ -439,10 +485,23 @@ void TCagra::LoadDetectorPositions() {
 
   positions_loaded = true;
 }
-size_t TCagra::GetCrystalId(int slot, char core) {
-  if (core == 'X') { return (size_t)-1; }
+int TCagra::GetCrystalId(int slot, char core) {
+  if (core == 'X') { return -1; }
   int index = (slot << 16) + (((int)core) << 8);
   return crystal_ids.at(index);
+}
+int TCagra::GetSegmentId(int slot, char core, int segnum, char system) {
+  if (segnum == 0 || core == 'X') { return -1; } // bgo or central contact
+
+  int index = 0;
+  if (system == 'Y') {
+    index = slot*10000 + segnum;
+  } else if (system == 'I') {
+    int coreval = ((int)core) - 0x41 + 1; // normalize to A=1,B=2,etc.
+    index = slot*10000 + coreval*100 + segnum;
+  }
+
+  return segment_ids.at(index);
 }
 
 void TCagra::Print(Option_t *opt) const { }

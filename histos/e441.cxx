@@ -120,21 +120,31 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
     int detector = core_hit.GetDetnum();
     char core_leaf = core_hit.GetLeaf();
     string chan = core_leaf + std::to_string(core_hit.GetSegnum());
-    size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+    auto crystal_id = TCagra::GetCrystalId(detector,core_leaf);
 
     // cagra core energy summary
-    hist(false,obj,"CrystalEnergySummary",
-//                      6000,-2000,22000,core_hit.GetCorrectedEnergy(),
-                      18000,-2000,22000,core_hit.GetCorrectedEnergy(),
-                      49,0,49,crystal_id);
-    hist(false,obj,"EgammaSum",7000,0,21000,core_hit.GetCorrectedEnergy());
+    hist(true,obj,"CrystalEnergySummary",
+         //6000,-2000,22000,core_hit.GetCorrectedEnergy(),
+         18000,-2000,22000,core_hit.GetCorrectedEnergy(),
+         49,0,49,crystal_id);
+    hist(true,obj,"EgammaSum",7000,0,21000,core_hit.GetCorrectedEnergy());
+
+
+    static int num_segments = TCagra::NumSegments();
+    for (auto& seg_hit : core_hit) {
+      auto segment_id = TCagra::GetSegmentId(detector,core_leaf,seg_hit.GetSegnum(),seg_hit.GetSystem());
+      hist(true,obj,"SegmentEnergySummary",
+           18000,-2000,22000,seg_hit.GetCorrectedEnergy(),
+           num_segments+1,0,num_segments+1,segment_id);
+    }
+
 
 
     static ULong_t first_ts = 0;
     if (first_ts <= 1e6){  first_ts = core_hit.Timestamp(); std::cout << "Timestamp: " << first_ts << "\n" << std::endl; }
     else {
       // cagra core time summary
-      hist(false,obj,"CrystalTimeSummary",
+      hist(true,obj,"CrystalTimeSummary",
                         1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // in seconds - 1 bin = 4 seconds
                         49,0,49,crystal_id);
 
@@ -142,6 +152,13 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
       hist(false,obj,"NumEvents","prerise[time]",1000,0,8000,(core_hit.Timestamp()-first_ts)*10/1.0e9,1250,6000,8500,core_hit.GetPreRise()/TANLEvent::GetShapingTime());
       hist(false,obj,"NumEvents","postrise[time]",1000,0,8000,(core_hit.Timestamp()-first_ts)*10/1.0e9,1250,6000,8500,core_hit.GetPostRise()/TANLEvent::GetShapingTime());
       hist(false,obj,"NumEvents","postrise[prerise]",1250,0,0,core_hit.GetPreRise()/TANLEvent::GetShapingTime(),1250,0,0,core_hit.GetPostRise()/TANLEvent::GetShapingTime());
+
+      for (auto& seg_hit : core_hit) {
+        auto segment_id = TCagra::GetSegmentId(detector,core_leaf,seg_hit.GetSegnum(),seg_hit.GetSystem());
+        hist(true,obj,"SegmentTimeSummary",
+             1000,0,4000,(seg_hit.Timestamp()-first_ts)*10/1.0e9, // in seconds - 1 bin = 4 seconds
+             num_segments+1,0,num_segments+1,segment_id);
+      }
 
     }
 
@@ -483,7 +500,7 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
             int detector = core_hit.GetDetnum();
             char core_leaf = core_hit.GetLeaf();
             string chan = core_leaf + std::to_string(core_hit.GetSegnum());
-            size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+            auto crystal_id = TCagra::GetCrystalId(detector,core_leaf);
             if (crystal_id > 50) { continue; }
 
 
@@ -671,7 +688,7 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
                 int detector = core_hit.GetDetnum();
                 char core_leaf = core_hit.GetLeaf();
                 string chan = core_leaf + std::to_string(core_hit.GetSegnum());
-                size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+                auto crystal_id = TCagra::GetCrystalId(detector,core_leaf);
 
                 // cagra core energy summary
                 hist(true,obj,dirname,"rand_EgamLab",
@@ -756,7 +773,7 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
         int detector = core_hit.GetDetnum();
         char core_leaf = core_hit.GetLeaf();
         string chan = core_leaf + std::to_string(core_hit.GetSegnum());
-        size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+        auto crystal_id = TCagra::GetCrystalId(detector,core_leaf);
         bool bgo_hit = false;
 
         auto cagratime = core_hit.Timestamp();
@@ -811,7 +828,7 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
             int detector = core_hit.GetDetnum();
             char core_leaf = core_hit.GetLeaf();
             string chan = core_leaf + std::to_string(core_hit.GetSegnum());
-            size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+            auto crystal_id = TCagra::GetCrystalId(detector,core_leaf);
 
             // cagra core energy summary
             hist(false,obj,"CrystalEnergySummaryPrompt",
@@ -926,7 +943,7 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
             int detector = core_hit.GetDetnum();
             char core_leaf = core_hit.GetLeaf();
             string chan = core_leaf + std::to_string(core_hit.GetSegnum());
-            size_t crystal_id = TCagra::GetCrystalId(detector,core_leaf);
+            auto crystal_id = TCagra::GetCrystalId(detector,core_leaf);
 
             // cagra core energy summary
             hist(false,obj,"Summary","rand_CrystalEnergySummaryPrompt",
