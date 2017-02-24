@@ -22,7 +22,7 @@ if __name__=="__main__":
     if not args.input:
         parser.error("No input file specified.")
 
-    fitter = SieveSlitFit(args.input,x=3,a=1,y=1,b=0)
+    fitter = SieveSlitFit(args.input,x=3,a=1,y=1,b=1)
     #fitter.plot_data()
     fitter.global_fit()
 
