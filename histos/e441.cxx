@@ -69,7 +69,7 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
   for (auto& seg_hit : core_hit) {
     string seg_chan = seg_hit.GetLeaf() + std::to_string(seg_hit.GetSegnum());
     stream.str("");  stream << "Prerise[Q]_" << detector << "_" << seg_chan;
-    hist(false,obj,local_dirname, stream.str(),2000,-10000,0,seg_hit.GetCharge(),1250,6000,8500,prerise);
+    hist(false,obj,local_dirname, stream.str(),2000,0,0,seg_hit.GetCharge(),1250,6000,8500,prerise);
   }
   // stream.str("");  stream << "Q[Prerise]_" << detector << "_" << chan;
   // hist(false,obj,local_dirname, stream.str(),1250,6000,8500,prerise,3000,0,6000,core_hit.GetCharge());
@@ -92,6 +92,8 @@ void PoleZeroHistos(TRuntimeObjects& obj, TCagraHit& core_hit, string local_dirn
     string seg_chan = seg_hit.GetLeaf() + std::to_string(seg_hit.GetSegnum());
     stream.str(""); stream << "E_pzcor_constant" << detector << "_" << seg_chan;
     hist(false,obj,local_dirname,stream.str(),4000,0,12000,seg_hit.GetCorrectedEnergy());
+    stream.str("");  stream << "Prerise[E_pzcor_constant]_" << detector << "_" << seg_chan;
+    hist(false,obj,local_dirname, stream.str(),4000,0,12000,seg_hit.GetCorrectedEnergy(),1250,6000,8500,prerise);
   }
 
 }
