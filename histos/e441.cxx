@@ -6,6 +6,7 @@ void hist(bool conditional, TRuntimeObjects& obj, Args&&... args) {
   if (conditional) { obj.FillHistogram(std::forward<Args>(args)...); }
 }
 
+
 static double m_target = 0;
 
 // ----------------------------------------------------------------------
@@ -244,6 +245,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
 
     hist(false,obj,"GR","RayID",64,-16,48, rcnp.GR_RAYID(0));
     if (rcnp.GR_RAYID(0) == 0) { // if track reconstruction successful
+
       hist(false,obj,"GR","x",1200,-600,600, rcnp.GR_X(0));
       hist(false,obj,"GR","x_cal",1000,0,20, rcnp.GR_X(0)*0.01074+6.872);
       hist(false,obj,"GR","y",200,-100,100, rcnp.GR_Y(0));
@@ -252,6 +254,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       hist(true,obj,"GR","a[x]",1200,-600,600,rcnp.GR_X(0),1000,-1,1,rcnp.GR_TH(0));
       hist(true,obj,"GR","y[a]",600,-0.15,0.15,rcnp.GR_TH(0),500,-50,50,rcnp.GR_Y(0));
       hist(true,obj,"GR","y[b]",500,-0.1,0.1,rcnp.GR_PH(0),500,-50,50,rcnp.GR_Y(0));
+
 
       if (rcnp.GR_TH(0)>-0.026 && rcnp.GR_TH(0) < -0.01) {
         hist(true,obj,"sieveslit_x1_a1","y[b]",500,-0.1,0.1,rcnp.GR_PH(0),500,-50,50,rcnp.GR_Y(0));
@@ -474,13 +477,49 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
   for (auto& hit : gr) {
 
     auto& rcnp = hit.GR();
-    if (rcnp.GR_RAYID(0) == 0) {
-      auto grtime = hit.GetTimestamp();
-      auto rf = rcnp.GR_RF(0);
-      auto x = rcnp.GR_X(0);
-      auto a = rcnp.GR_TH(0);
 
-      auto rf_cor = rf - -1121.882*a;
+    auto grtime = hit.GetTimestamp();
+    auto rf = rcnp.GR_RF(0);
+    auto x = rcnp.GR_X(0);
+    auto a = rcnp.GR_TH(0);
+    auto rf_cor = rf - -1121.882*a;
+
+    auto hist_vec = [](
+      bool conditional,
+      TRuntimeObjects& obj,
+      std::string dirname,
+      std::string histname,
+      int xbins,
+      int xlow,
+      int xhigh,
+      std::vector<double>* xvals) {
+      if (xvals) {
+        for (auto& val : *xvals) {
+          hist(conditional,obj,dirname,histname,xbins,xlow,xhigh,val);
+        }
+      }
+    };
+
+    // PID gate (it's pretty clean so only an RF gate is really needed)
+    if ((rf_cor >= 900 && rf_cor < 975 ) || (rf_cor >=1700 && rf_cor < 1775)) {
+      hist_vec(true,obj,dirname,"gr_tdcr_x1",500,0,500,rcnp.GR_TDCR_X1());
+      hist_vec(true,obj,dirname,"gr_tdcr_u1",500,0,500,rcnp.GR_TDCR_U1());
+      hist_vec(true,obj,dirname,"gr_tdcr_x2",500,0,500,rcnp.GR_TDCR_X2());
+      hist_vec(true,obj,dirname,"gr_tdcr_u2",500,0,500,rcnp.GR_TDCR_U2());
+
+      hist_vec(true,obj,dirname,"gr_tdc_x1",500,0,500,rcnp.GR_TDC_X1());
+      hist_vec(true,obj,dirname,"gr_tdc_u1",500,0,500,rcnp.GR_TDC_U1());
+      hist_vec(true,obj,dirname,"gr_tdc_x2",500,0,500,rcnp.GR_TDC_X2());
+      hist_vec(true,obj,dirname,"gr_tdc_u2",500,0,500,rcnp.GR_TDC_U2());
+
+      hist(true,obj,dirname,"gr_drift_x1",500,0,0,rcnp.GR_DRIFT_X1(0));
+      hist(true,obj,dirname,"gr_drift_u1",500,0,0,rcnp.GR_DRIFT_U1(0));
+      hist(true,obj,dirname,"gr_drift_x2",500,0,0,rcnp.GR_DRIFT_X2(0));
+      hist(true,obj,dirname,"gr_drift_u2",500,0,0,rcnp.GR_DRIFT_U2(0));
+    }
+
+    if (rcnp.GR_RAYID(0) == 0) {
+
       hist(true,obj,dirname,"RF_acor[A]",1000,-1,1,a,500,600,1800,rf_cor);
       hist(true,obj,dirname,"RF_acor[X]",1200,-600,600,x,500,600,1800,rf_cor);
 
@@ -505,6 +544,8 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
         hist(true,obj,dirname,"DE1[RFcor]rfgate",900,200,2000,rf_cor,350,0,350, hit.GetMeanPlastE1());
         hist(true,obj,dirname,"DE2[RFcor]rfgate",900,200,2000,rf_cor,350,0,350, hit.GetMeanPlastE2());
         hist(true,obj,dirname,"DE3[RFcor]rfgate",900,200,2000,rf_cor,2000,0,1300, hit.GetMeanPlastE3());
+
+
 
         if (cagra) {
 
