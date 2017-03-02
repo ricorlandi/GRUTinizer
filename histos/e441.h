@@ -14,6 +14,7 @@
 #include "TObject.h"
 #include "TFile.h"
 #include "TCutG.h"
+#include "TVector3.h"
 #include "TPreserveGDirectory.h"
 #include "TCagra.h"
 #include "TGrandRaiden.h"
@@ -54,6 +55,7 @@ static const double ke_projectile = GValue::Value("BeamKineticE") - eloss;
 static const double e_projectile = m_projectile + ke_projectile;
 static const double p_projectile = TMath::Sqrt(e_projectile*e_projectile-m_projectile*m_projectile);
 static const double beta = p_projectile/e_projectile;
+static const TVector3 projectile(0.,0.,p_projectile);
 
 
 //static TNucleus li6ex(3,3,li6.GetMass()+Li6Ex,"6Li*");

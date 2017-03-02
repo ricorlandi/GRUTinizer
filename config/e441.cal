@@ -496,21 +496,21 @@ BGO09XP00 {
 CLO09RN01 {
   Address: 0x01007105
   EnergyCoeff: 9669.7750 9.0642
-  PoleZero: 0.87
+  PoleZero: 1
   System: Y
 }
 
 CLO09MN02 {
   Address: 0x01007106
   EnergyCoeff: 9507.7110 8.9162
-  PoleZero: 0.87
+  PoleZero: 1
   System: Y
 }
 
 CLO09LN03 {
   Address: 0x01007107
   EnergyCoeff: 9488.4250 8.9105
-  PoleZero: 0.87
+  PoleZero: 1
   System: Y
 }
 
