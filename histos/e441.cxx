@@ -502,20 +502,22 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
 
     // PID gate (it's pretty clean so only an RF gate is really needed)
     if ((rf_cor >= 900 && rf_cor < 975 ) || (rf_cor >=1700 && rf_cor < 1775)) {
-      hist_vec(true,obj,dirname,"gr_tdcr_x1",500,0,500,rcnp.GR_TDCR_X1());
-      hist_vec(true,obj,dirname,"gr_tdcr_u1",500,0,500,rcnp.GR_TDCR_U1());
-      hist_vec(true,obj,dirname,"gr_tdcr_x2",500,0,500,rcnp.GR_TDCR_X2());
-      hist_vec(true,obj,dirname,"gr_tdcr_u2",500,0,500,rcnp.GR_TDCR_U2());
+      hist_vec(true,obj,dirname,"GR_TDCR_X1",500,0,500,rcnp.GR_TDCR_X1());
+      hist_vec(true,obj,dirname,"GR_TDCR_U1",500,0,500,rcnp.GR_TDCR_U1());
+      hist_vec(true,obj,dirname,"GR_TDCR_X2",500,0,500,rcnp.GR_TDCR_X2());
+      hist_vec(true,obj,dirname,"GR_TDCR_U2",500,0,500,rcnp.GR_TDCR_U2());
 
-      hist_vec(true,obj,dirname,"gr_tdc_x1",500,0,500,rcnp.GR_TDC_X1());
-      hist_vec(true,obj,dirname,"gr_tdc_u1",500,0,500,rcnp.GR_TDC_U1());
-      hist_vec(true,obj,dirname,"gr_tdc_x2",500,0,500,rcnp.GR_TDC_X2());
-      hist_vec(true,obj,dirname,"gr_tdc_u2",500,0,500,rcnp.GR_TDC_U2());
+      // These histograms are required if you want to run the
+      // drift time to length conversion script (./util/rcnp/gr_tdc.py)
+      hist_vec(true,obj,dirname,"GR_TDC_X1",500,0,500,rcnp.GR_TDC_X1());
+      hist_vec(true,obj,dirname,"GR_TDC_U1",500,0,500,rcnp.GR_TDC_U1());
+      hist_vec(true,obj,dirname,"GR_TDC_X2",500,0,500,rcnp.GR_TDC_X2());
+      hist_vec(true,obj,dirname,"GR_TDC_U2",500,0,500,rcnp.GR_TDC_U2());
 
-      hist(true,obj,dirname,"gr_drift_x1",500,0,0,rcnp.GR_DRIFT_X1(0));
-      hist(true,obj,dirname,"gr_drift_u1",500,0,0,rcnp.GR_DRIFT_U1(0));
-      hist(true,obj,dirname,"gr_drift_x2",500,0,0,rcnp.GR_DRIFT_X2(0));
-      hist(true,obj,dirname,"gr_drift_u2",500,0,0,rcnp.GR_DRIFT_U2(0));
+      hist_vec(true,obj,dirname,"GR_DRIFT_X1",500,-5,5,rcnp.GR_DRIFT_X1());
+      hist_vec(true,obj,dirname,"GR_DRIFT_U1",500,-5,5,rcnp.GR_DRIFT_U1());
+      hist_vec(true,obj,dirname,"GR_DRIFT_X2",500,-5,5,rcnp.GR_DRIFT_X2());
+      hist_vec(true,obj,dirname,"GR_DRIFT_U2",500,-5,5,rcnp.GR_DRIFT_U2());
     }
 
     if (rcnp.GR_RAYID(0) == 0) {
