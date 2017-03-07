@@ -35,6 +35,10 @@ void MakeCoincidenceHistograms(TRuntimeObjects&, TCagra&, TGrandRaiden&);
 void LoadCuts();
 void InitTarget();
 
+enum class Target { n12C=1, n56Fe=2, n24Mg=3, n93Nb=4, n93Nb2=5  };
+
+static const Target target = Target(GValue::Value("Target"));
+
 static string name;
 static string dirname="";
 static stringstream stream;
@@ -173,6 +177,125 @@ void DrawAverageTrace(TCagraHit& core_hit) {
     traces.clear();
   }
 }
+
+
+class RateOffset {
+public:
+  RateOffset(ULong_t interval, Target target)
+    : interval(interval) {
+    switch (target) {
+    case Target::n12C:
+    case Target::n56Fe:
+    case Target::n24Mg:
+     num_crystals = 1;
+     break;
+    case Target::n93Nb:
+    case Target::n93Nb2:
+      num_crystals = 49;
+      break;
+    default:
+      throw std::runtime_error("Unknown target");
+    }
+    counts.reserve(num_crystals);
+    rate.reserve(num_crystals);
+    std::fill(counts.begin(), counts.end(), 0);
+    std::fill(rate.begin(), rate.end(), 0);
+  }
+
+
+  inline ULong_t Update(const ULong_t& ts, size_t crystal_id=0) {
+    if (crystal_id == (size_t)-1) { return first_ts; }
+
+    if (first_ts<=1e6) {
+      first_ts = ts;
+      std::cout << "Timestamp: " << first_ts << "\n" << std::endl;
+    } else {
+
+      assert(crystal_id < num_crystals);
+
+      // calculate rate every interval (js)
+      counts[crystal_id]++;
+      if ((ts-first_ts)*10/1.0e9 > interval_end) {
+        interval_end += interval;
+
+        for(int i=0; i<num_crystals; i++) { rate[i] = counts[i]/interval; }
+        for(int i=0; i<num_crystals; i++) { counts[i] = 0; }
+        //rate = 8*counts/interval;
+        //counts = 0;
+      }
+
+
+      switch (target) {
+      case Target::n12C:
+        if(rate[0]*8 > 10000) { ecal_offset = -11.511178+0.000120007*(rate[crystal_id])*8; }
+        break;
+      case Target::n56Fe:
+        if(rate[crystal_id] > 10000) { ecal_offset = 0; }
+        break;
+      case Target::n24Mg:
+        if(rate[0]*8 > 10000) { ecal_offset = -16.921206+0.000136664*(rate[crystal_id]*8); }
+        break;
+      case Target::n93Nb:
+        assert(num_crystals==49);
+	ecal_offset = ratecorr_intercepts[crystal_id]+ratecorr_slopes[crystal_id]*rate[crystal_id];
+        break;
+      case Target::n93Nb2:
+        assert(num_crystals==49);
+	if (crystal_id == 44) {
+	  ecal_offset = -2.942630+0.168145*rate[crystal_id];
+	} else {
+          ecal_offset = ratecorr_intercepts[crystal_id]+ratecorr_slopes[crystal_id]*rate[crystal_id];
+	}
+        break;
+      default:
+        throw std::runtime_error("Unknown target");
+      }
+
+
+
+
+    }
+    return first_ts;
+  }
+  inline Double_t operator()() { return ecal_offset; }
+
+
+private:
+  ULong_t  first_ts = 0;
+  const ULong_t interval = 1; // interval for rate calculation
+  size_t num_crystals;
+  ULong_t  interval_end = 1;
+  std::vector<Double_t> counts;
+  std::vector<Double_t> rate;
+  Double_t ecal_offset = 0;
+
+
+  std::vector<double> ratecorr_slopes = {0.080527,0.083746,0.074751,0.077786,
+					 0.076732,0.098430,0.093351,0.083438,
+					 0.085293,0.101123,0.096509,0.083015,
+					 0.082756,0.087294,0.083884,0.075692,
+					 0.080683,0.085537,0.080275,0.087235,
+					 0,0,0,0,
+					 0.131977,0.086933,0.088750,0.105513,
+					 0.094898,0.088654,0.087073,0.097078,
+					 0.075507,0.077302,0.075756,0.073714,
+					 0.075501,0.074556,0.074845,0.071820,
+					 0.082464,0.080693,0.082462,0.083240,
+					 0.065678,0.081520,0.081546,0.081205,0};
+
+  std::vector<double> ratecorr_intercepts = {17.174516,18.352194,15.124436,13.700136,
+					     16.116238,23.141675,23.135089,20.002620,
+					     18.941009,22.406043,21.815457,17.134956,
+					     20.875168,19.613706,21.087828,18.793253,
+					     16.577259,13.321167,15.279376,14.972158,
+					     0,0,0,0,
+					     22.339411,17.500503,17.637294,22.298484,
+					     17.500876,18.257787,15.642874,21.772555,
+					     12.990928,11.156014,12.811979,13.767984,
+					     11.158173,11.734640,12.296375,11.779592,
+					     22.084610,20.376215,20.625643,19.627033,
+					     6.867173,21.474127,20.714631,19.395711,0};
+};
 
 
 ///=============Mass definition============

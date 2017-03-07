@@ -36,22 +36,27 @@ void MakeHistograms(TRuntimeObjects& obj) {
 // ----------------------------------------------------------------------
 
 void InitTarget() {
- size_t target_index = GValue::Value("Target");
-  switch(target_index) {
-  case 1:
+  static bool once = false;
+  if (once) { return; }
+  once = true;
+  std::cout << "Target " << int(target) << " selected." << std::endl;
+
+  switch(target) {
+  case Target::n12C:
     m_target = c12.GetMass();
     break;
-  case 2:
+  case Target::n56Fe:
     m_target = fe56.GetMass();
     break;
-  case 3:
+  case Target::n24Mg:
     m_target = mg24.GetMass();
     break;
-  case 4:
+  case Target::n93Nb:
+  case Target::n93Nb2:
     m_target = nb93.GetMass();
     break;
-  case 0:
   default:
+    throw std::runtime_error("Unknown target");
     m_target = 0;
     break;
   }
@@ -143,13 +148,30 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
 
 
-    static ULong_t first_ts = 0;
-    if (first_ts <= 1e6){  first_ts = core_hit.Timestamp(); std::cout << "Timestamp: " << first_ts << "\n" << std::endl; }
-    else {
+    static RateOffset rate_offset(1 /* second */, target);
+    auto first_ts = rate_offset.Update(core_hit.Timestamp(),(target == Target::n93Nb || target == Target::n93Nb2) ? crystal_id : 0);
+    if (first_ts > 1e6) {
+
       // cagra core time summary
       hist(true,obj,"CrystalTimeSummary",
                         1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // in seconds - 1 bin = 4 seconds
                         49,0,49,crystal_id);
+
+
+      // cagra energy vs time to study rate dependence (js)
+      obj.FillHistogram("EnergyVsTime",
+                        1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
+                        18000,-2000,22000,core_hit.GetCorrectedEnergy());
+
+      // cagra energy vs time to study rate dependence (js)
+      obj.FillHistogram("EnergyVsTime_baseline",
+                        1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
+                        18000,-2000,22000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
+
+      obj.FillHistogram("EnergyVsTime_withRateCorrection",
+                        1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
+                        18000,-2000,22000,core_hit.GetCorrectedEnergy()+rate_offset());
+
 
       hist(false,obj,"NumEvents","cagra_hits_time",1000,0,8000,(core_hit.Timestamp()-first_ts)*10/1.0e9);
       hist(false,obj,"NumEvents","prerise[time]",1000,0,8000,(core_hit.Timestamp()-first_ts)*10/1.0e9,1250,6000,8500,core_hit.GetPreRise()/TANLEvent::GetShapingTime());
@@ -514,10 +536,15 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
       hist_vec(true,obj,dirname,"GR_TDC_X2",500,0,500,rcnp.GR_TDC_X2());
       hist_vec(true,obj,dirname,"GR_TDC_U2",500,0,500,rcnp.GR_TDC_U2());
 
-      hist_vec(true,obj,dirname,"GR_DRIFT_X1",500,-5,5,rcnp.GR_DRIFT_X1());
-      hist_vec(true,obj,dirname,"GR_DRIFT_U1",500,-5,5,rcnp.GR_DRIFT_U1());
-      hist_vec(true,obj,dirname,"GR_DRIFT_X2",500,-5,5,rcnp.GR_DRIFT_X2());
-      hist_vec(true,obj,dirname,"GR_DRIFT_U2",500,-5,5,rcnp.GR_DRIFT_U2());
+      hist_vec(true,obj,dirname,"GR_DRIFT_X1",500,0,0,rcnp.GR_DRIFT_X1());
+      hist_vec(true,obj,dirname,"GR_DRIFT_U1",500,0,0,rcnp.GR_DRIFT_U1());
+      hist_vec(true,obj,dirname,"GR_DRIFT_X2",500,0,0,rcnp.GR_DRIFT_X2());
+      hist_vec(true,obj,dirname,"GR_DRIFT_U2",500,0,0,rcnp.GR_DRIFT_U2());
+
+      for (auto& tdc : *rcnp.GR_TDC_X1()) {
+        obj.FillHistogram(dirname,"GR_TDC_X1",500,0,500,tdc);
+      }
+
     }
 
     if (rcnp.GR_RAYID(0) == 0) {
