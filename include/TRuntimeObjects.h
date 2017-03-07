@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <cmath>
 
 #include "TCutG.h"
 #include "TDirectory.h"
@@ -14,6 +15,10 @@ class TH1;
 class TH2;
 class TFile;
 class TProfile;
+
+class GH1D;
+class GH2D;
+class TDetector;
 
 /// Object passed to the online histograms.
 /**
@@ -40,6 +45,9 @@ public:
   T* GetDetector(){
     return detectors->GetDetector<T>();
   }
+  TDetector *GetDetector(std::string dname) const { 
+    return detectors->GetDetector(dname);
+  }
 
   TCutG* GetCut(const std::string& name);
 
@@ -51,10 +59,26 @@ public:
 
 
   TH1* FillHistogram(const char* name,
-                     int bins, double low, double high, double value);
+                     int bins, double low, double high, double value,
+                     double weight=1);
   TH2* FillHistogram(const char* name,
                      int Xbins, double Xlow, double Xhigh, double Xvalue,
-                     int Ybins, double Ylow, double Yhigh, double Yvalue);
+                     int Ybins, double Ylow, double Yhigh, double Yvalue,
+                     double weight=1);
+
+  GH1D* InitHistogram(const char* name,const char *title,int bins, double low, double high);
+  GH2D* InitHistogram(const char* name,const char *title,int Xbins, double Xlow, double Xhigh,
+                                                        int Ybins, double Ylow, double Yhigh);
+  GH1D* InitHistogram(const char* dir,const char* name,const char *title,int bins, double low, double high);
+  GH2D* InitHistogram(const char* dir,const char* name,const char *title,int Xbins, double Xlow, double Xhigh,
+                                                                        int Ybins, double Ylow, double Yhigh);
+  int   FillHistogram(const char* name);
+  int   FillHistogram(const char* dir,const char* name);
+  
+  
+  
+  
+  
   TProfile* FillProfileHist(const char* name,
 			    int Xbins, double Xlow, double Xhigh, double Xvalue,
 			    double Yvalue);
@@ -64,16 +88,20 @@ public:
 
 
   TH1* FillHistogram(const std::string& name,
-                     int bins, double low, double high, double value){
+                     int bins, double low, double high, double value,
+                     double weight=1){
     return FillHistogram(name.c_str(),
-                         bins, low, high, value);
+                         bins, low, high, value,
+                         weight);
   }
   TH2* FillHistogram(const std::string& name,
                      int Xbins, double Xlow, double Xhigh, double Xvalue,
-                     int Ybins, double Ylow, double Yhigh, double Yvalue) {
+                     int Ybins, double Ylow, double Yhigh, double Yvalue,
+                     double weight=1) {
     return FillHistogram(name.c_str(),
                          Xbins, Xlow, Xhigh, Xvalue,
-                         Ybins, Ylow, Yhigh, Yvalue);
+                         Ybins, Ylow, Yhigh, Yvalue,
+                         weight);
   }
   TProfile* FillProfileHist(const std::string& name,
 			    int Xbins, double Xlow, double Xhigh, double Xvalue,
@@ -91,29 +119,35 @@ public:
   }
   //---------------------------------------------------------------------
   TDirectory* FillHistogram(const char* dirname,const char* name,
-		     int bins, double low, double high, double value);
+                            int bins, double low, double high, double value,
+                            double weight=1);
   TDirectory* FillHistogram(const char* dirname,const char* name,
-                     int Xbins, double Xlow, double Xhigh, double Xvalue,
-                     int Ybins, double Ylow, double Yhigh, double Yvalue);
+                            int Xbins, double Xlow, double Xhigh, double Xvalue,
+                            int Ybins, double Ylow, double Yhigh, double Yvalue,
+                            double weight=1);
   TDirectory* FillProfileHist(const char* dirname,const char* name,
 			      int Xbins, double Xlow, double Xhigh, double Xvalue,
 			      double Yvalue);
   TDirectory* FillHistogramSym(const char* dirname,const char* name,
-                     int Xbins, double Xlow, double Xhigh, double Xvalue,
-                     int Ybins, double Ylow, double Yhigh, double Yvalue);
+                               int Xbins, double Xlow, double Xhigh, double Xvalue,
+                               int Ybins, double Ylow, double Yhigh, double Yvalue);
 
 
   TDirectory* FillHistogram(const std::string& dirname,const std::string& name,
-                            int bins, double low, double high, double value) {
+                            int bins, double low, double high, double value,
+                            double weight=1) {
     return FillHistogram(dirname.c_str(), name.c_str(),
-                         bins, low, high, value);
+                         bins, low, high, value,
+                         weight);
   }
   TDirectory* FillHistogram(const std::string& dirname,const std::string& name,
                             int Xbins, double Xlow, double Xhigh, double Xvalue,
-                            int Ybins, double Ylow, double Yhigh, double Yvalue) {
+                            int Ybins, double Ylow, double Yhigh, double Yvalue,
+                            double weight=1) {
     return FillHistogram(dirname.c_str(), name.c_str(),
                          Xbins, Xlow, Xhigh, Xvalue,
-                         Ybins, Ylow, Yhigh, Yvalue);
+                         Ybins, Ylow, Yhigh, Yvalue,
+                         weight);
   }
   TDirectory* FillProfileHist(const std::string& dirname,const std::string& name,
 			      int Xbins, double Xlow, double Xhigh, double Xvalue,

@@ -1,0 +1,65 @@
+SignalPolarity {
+  Value: -1
+}
+
+ShapingTime {
+  Value: 350.0
+}
+
+d_window {
+  Value: 0.06
+}
+
+d2_window {
+  Value: 0.00
+}
+
+k_window {
+  Value: 0.2
+}
+
+k0_window {
+  Value: 0.8
+}
+
+d3_window {
+  Value: 0.2
+}
+
+GrandRaiden_Slope {
+  Value: -0.12129972575532295
+}
+
+GrandRaiden_Offset {
+  Value: 2538.6778436100226
+}
+
+A_Offset {
+  Value: -2.7365978232222115
+}
+
+B_Offset {
+  Value: 5.6473034118077621
+
+}
+
+BeamKineticE {
+  Value: 588.0
+      // MeV
+}
+
+EnergyLoss {
+  Value: 0.961
+      // MeV
+}
+
+// Target indices
+// Blank = 0
+// 12C   = 1
+// 56Fe  = 2
+// 24Mg  = 3
+// 93Nb  = 4
+
+Target {
+  Value: 1
+}

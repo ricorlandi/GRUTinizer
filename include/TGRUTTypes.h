@@ -16,6 +16,7 @@ enum kDetectorSystems {
   BANK29     = 8,
   GRETINA_SIM= 11,
   S800_SIM   = 9,
+  LENDA      = 21,
 
   SEGA = 64,
   JANUS = 65,
@@ -38,6 +39,7 @@ enum kFileType {
   GRETINA_MODE2 = 2,
   GRETINA_MODE3 = 3,
   ANL_RAW = 4,
+  RCNP_BLD = 50,
   ROOT_DATA = 256,
   ROOT_MACRO = 257,
   CALIBRATED = 512,
@@ -46,6 +48,7 @@ enum kFileType {
   DETECTOR_ENVIRONMENT = 1024,
   GUI_HIST_FILE = 2048,
   COMPILED_HISTOGRAMS = 2049,
+  COMPILED_FILTER = 2053,
   CONFIG_FILE = 2050,
   S800_INVMAP = 2051,
   CUTS_FILE = 2052

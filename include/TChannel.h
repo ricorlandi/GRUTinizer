@@ -65,6 +65,18 @@ public:
   double CalEnergy(int charge, double timestamp=-DBL_MAX) const;
   double CalEnergy(double charge, double timestamp=-DBL_MAX) const;
 
+  void SetPoleZeroCoeff(std::vector<double> coeff, double timestamp=-DBL_MAX);
+  const std::vector<double>& GetPoleZeroCoeff(double timestamp=-DBL_MAX) const;
+  void ClearPoleZeroCoeff();
+  double PoleZeroCorrection(const double& prerise, const double& postrise, const double& shaping_time,
+                            const double& polarity=1, double timestamp=-DBL_MAX) const;
+
+  void SetBaselineCoeff(std::vector<double> coeff, double timestamp=-DBL_MAX);
+  const std::vector<double>& GetBaselineCoeff(double timestamp=-DBL_MAX) const;
+  void ClearBaselineCoeff();
+  double BaselineCorrection(const double& charge, double asym_bl=0, const double& polarity=1, double timestamp=-DBL_MAX) const;
+
+
   void SetTimeCoeff(std::vector<double> tmp, double timestamp=-DBL_MAX);
   const std::vector<double>& GetTimeCoeff(double timestamp=-DBL_MAX) const;
   void ClearTimeCoeff();
@@ -75,6 +87,7 @@ public:
   std::vector<double> GetEfficiencyCoeff() const { return efficiency_coeff; }
   void AddEfficiencyCoeff(double tmp) { efficiency_coeff.push_back(tmp); }
   void ClearEfficiencyCoeff();
+  double CalEfficiency(double energy) const;
 
 
   bool AppendChannel(TChannel*);
@@ -92,6 +105,9 @@ public:
   static double Calibrate(int value, const std::vector<double>& coeff);
   static double Calibrate(double value, const std::vector<double>& coeff);
   static double ParseStartTime(const std::string& type);
+  static double Efficiency(double energy, const std::vector<double>& coeff);
+
+
 
   static std::vector<double> empty_vec; //!
 
@@ -120,6 +136,8 @@ public:
 
   std::vector<CoefficientTimes> energy_coeff;
   std::vector<CoefficientTimes> time_coeff;
+  std::vector<CoefficientTimes> polezero_corrections;
+  std::vector<CoefficientTimes> baseline_corrections;
   std::vector<double> efficiency_coeff;
   int pedestal;
   //name and title held by TNamed.

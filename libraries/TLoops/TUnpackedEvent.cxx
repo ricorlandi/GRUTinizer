@@ -17,6 +17,7 @@
 #include "TFastScint.h"
 #include "TCagra.h"
 #include "TGrandRaiden.h"
+#include "TLenda.h"
 
 TUnpackedEvent::TUnpackedEvent() { }
 
@@ -92,16 +93,22 @@ void TUnpackedEvent::Build() {
       GetDetector<TGrandRaiden>(true)->Build(raw_data);
       break;
 
+    case kDetectorSystems::LENDA:
+      GetDetector<TLenda>(true)->Build(raw_data);
+      break;
+
     default:
       break;
     }
   }
-
-  raw_data_map.clear();
 }
 
 void TUnpackedEvent::AddRawData(const TRawEvent& event, kDetectorSystems detector) {
   raw_data_map[detector].push_back(event);
+}
+
+void TUnpackedEvent::ClearRawData() {
+  raw_data_map.clear();
 }
 
 void TUnpackedEvent::SetRunStart(unsigned int unix_time){
@@ -109,3 +116,19 @@ void TUnpackedEvent::SetRunStart(unsigned int unix_time){
     det->SetRunStart(unix_time);
   }
 }
+
+
+TDetector* TUnpackedEvent::GetDetector(std::string detname) const {
+  for(auto det : detectors) {
+    if(detname.compare(det->IsA()->GetName())==0) {
+      TDetector* output = det;
+      if(output){
+        return output;
+      }
+    }
+  }
+  return NULL;
+}
+
+
+
