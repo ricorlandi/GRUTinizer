@@ -536,10 +536,10 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
       hist_vec(true,obj,dirname,"GR_TDC_X2",500,0,500,rcnp.GR_TDC_X2());
       hist_vec(true,obj,dirname,"GR_TDC_U2",500,0,500,rcnp.GR_TDC_U2());
 
-      hist_vec(true,obj,dirname,"GR_DRIFT_X1",500,0,0,rcnp.GR_DRIFT_X1());
-      hist_vec(true,obj,dirname,"GR_DRIFT_U1",500,0,0,rcnp.GR_DRIFT_U1());
-      hist_vec(true,obj,dirname,"GR_DRIFT_X2",500,0,0,rcnp.GR_DRIFT_X2());
-      hist_vec(true,obj,dirname,"GR_DRIFT_U2",500,0,0,rcnp.GR_DRIFT_U2());
+      hist_vec(true,obj,dirname,"GR_DRIFT_X1",500,-10,10,rcnp.GR_DRIFT_X1());
+      hist_vec(true,obj,dirname,"GR_DRIFT_U1",500,-10,10,rcnp.GR_DRIFT_U1());
+      hist_vec(true,obj,dirname,"GR_DRIFT_X2",500,-10,10,rcnp.GR_DRIFT_X2());
+      hist_vec(true,obj,dirname,"GR_DRIFT_U2",500,-10,10,rcnp.GR_DRIFT_U2());
 
       for (auto& tdc : *rcnp.GR_TDC_X1()) {
         obj.FillHistogram(dirname,"GR_TDC_X1",500,0,500,tdc);

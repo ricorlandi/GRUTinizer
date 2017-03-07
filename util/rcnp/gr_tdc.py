@@ -19,7 +19,7 @@ plt.set_cmap(cmaps.viridis)
 
 def get_program_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", type=str,help="Input TDC histograms (.root) file",default=None)
+    parser.add_argument("input", type=str,help="Input TDCR histograms (.root) file",default=None)
     parser.add_argument("--output", type=str,help="Output gr_wtdc.hst path",default='./grtdc.hst')
     parser.add_argument("--directory", type=str,help="TDirectory in which histograms are stored",default="")
     parser.add_argument("--fraction_of_mean", type=float,help="Fraction of mean of the uniform part of the timing spectra to use as the lower and upper bounds of the timing spectra",default=0.1)
@@ -33,10 +33,10 @@ if __name__=="__main__":
     args = get_program_arguments()
     tfile = ROOT.TFile(args.input)
     hists = [
-        tfile.Get(args.directory+"GR_TDC_X1"),
-        tfile.Get(args.directory+"GR_TDC_U1"),
-        tfile.Get(args.directory+"GR_TDC_X2"),
-        tfile.Get(args.directory+"GR_TDC_U2")
+        tfile.Get(args.directory+"GR_TDCR_X1"),
+        tfile.Get(args.directory+"GR_TDCR_U1"),
+        tfile.Get(args.directory+"GR_TDCR_X2"),
+        tfile.Get(args.directory+"GR_TDCR_U2")
     ]
     # check if histograms were successfully found
     for hist in hists:
@@ -67,7 +67,7 @@ if __name__=="__main__":
                 if upper_bound == 0 and counts < bound_val:
                     upper_bound = i
                     break
-        print "6  def   GR_WTDC_X1 = {"+"{},{}".format(lower_bound,upper_bound)+"}"
+        print "6  def   GR_WTDC_"+hist.GetName()[-2:]+" = {"+"{},{}".format(lower_bound,upper_bound)+"}"
 
 
 
