@@ -148,29 +148,42 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
 
 
 
-    static RateOffset rate_offset(1 /* second */, target);
-    auto first_ts = rate_offset.Update(core_hit.Timestamp(),(target == Target::n93Nb || target == Target::n93Nb2) ? crystal_id : 0);
-    if (first_ts > 1e6) {
+    static RateOffset rate_offset(1, target);
+    auto first_ts = rate_offset.Update( core_hit.Timestamp(),
+      (target == Target::n93Nb || target == Target::n93Nb2) ? crystal_id : 0);
 
-      // cagra core time summary
+    if (first_ts > 1e6 && crystal_id != -1) {
+
       hist(true,obj,"CrystalTimeSummary",
                         1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // in seconds - 1 bin = 4 seconds
                         49,0,49,crystal_id);
 
-
-      // cagra energy vs time to study rate dependence (js)
       obj.FillHistogram("EnergyVsTime",
                         1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
                         18000,-2000,22000,core_hit.GetCorrectedEnergy());
 
-      // cagra energy vs time to study rate dependence (js)
       obj.FillHistogram("EnergyVsTime_baseline",
                         1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
-                        18000,-2000,22000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
+                        18000,-2000,22000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample())-(1768-511));
 
-      obj.FillHistogram("EnergyVsTime_withRateCorrection",
+      hist(true,obj,"CrystalEnergyBLSummary",
+           18000,-2000,22000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample())-(1768-511),
+           49,0,49,crystal_id);
+
+      //////////////////////////////////////
+      // rate correct the cagra cc energy //
+      rate_offset.RateCorrect(core_hit);  //
+      //////////////////////////////////////
+
+      hist(true,obj,"RateCorrectedEnergySummary",
+           18000,-2000,22000,core_hit.GetCorrectedEnergy(),
+           49,0,49,crystal_id);
+
+      hist(true,obj,"EgammaSum",7000,0,21000,core_hit.GetCorrectedEnergy());
+
+      obj.FillHistogram("RateCorrectedEnergyVsTime",
                         1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
-                        18000,-2000,22000,core_hit.GetCorrectedEnergy()+rate_offset());
+                        18000,-2000,22000,core_hit.GetCorrectedEnergy());
 
 
       hist(false,obj,"NumEvents","cagra_hits_time",1000,0,8000,(core_hit.Timestamp()-first_ts)*10/1.0e9);
@@ -871,12 +884,8 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
         hist(false,obj,"Coincident",stream.str().c_str(),1000,-500,1500,tdiff);
 
 
-        // stream.str(""); stream << "Egam[tdiff]_" <<detector << "_" << chan;
-        // hist(false,obj,stream.str(),5000,0,10000,core_hit.GetCorrectedEnergy(),1000,-500,1500,tdiff);
-
 
         // doppler reconstruction
-
         dirname = "ParticleGamma";
         auto Ecm = core_hit.GetDoppler(beta,pos::core_only);
         auto ejectile = hit.GetEjectileVector(true);

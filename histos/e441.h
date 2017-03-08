@@ -250,12 +250,12 @@ public:
       default:
         throw std::runtime_error("Unknown target");
       }
-
-
-
-
     }
     return first_ts;
+  }
+  inline void RateCorrect(TCagraHit& hit) {
+    // rate correct energy
+    hit.SetCorrectedEnergy(hit.GetCorrectedEnergy()+ecal_offset);
   }
   inline Double_t operator()() { return ecal_offset; }
 
