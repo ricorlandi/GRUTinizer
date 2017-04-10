@@ -163,18 +163,18 @@ void MakeCAGRAHistograms(TRuntimeObjects& obj, TCagra& cagra) {
            1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
            18000,-2000,22000,core_hit.GetCorrectedEnergy());
 
-      auto baselines = core_hit.GetCalculatedBaseline();
       hist(false,obj,"EnergyVsTime_basesample",
            1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
            18000,-2000,22000,core_hit.GetCorrectedEnergy(core_hit.GetBaseSample()));
 
-      hist(false,obj,"EnergyVsTime_baseline1",
-           1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
-           18000,-2000,22000,core_hit.GetCorrectedEnergy( baselines.first ));
+      // auto baselines = core_hit.GetCalculatedBaseline();
+      // hist(false,obj,"EnergyVsTime_baseline1",
+      //      1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
+      //      18000,-2000,22000,core_hit.GetCorrectedEnergy( baselines.first ));
 
-      hist(false,obj,"EnergyVsTime_baseline2",
-           1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
-           18000,-2000,22000,core_hit.GetCorrectedEnergy( baselines.second ));
+      // hist(false,obj,"EnergyVsTime_baseline2",
+      //      1000,0,4000,(core_hit.Timestamp()-first_ts)*10/1.0e9, // 1 bin = 4 seconds
+      //      18000,-2000,22000,core_hit.GetCorrectedEnergy( baselines.second ));
 
 
       //////////////////////////////////////

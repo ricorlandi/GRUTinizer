@@ -100,8 +100,6 @@ class TCagraHit : public TDetectorHit {
     inline void MarkAsSegmentHit() { is_segment = true; }
     bool IsSegment() { return is_segment; }
     void SetCorrectedEnergy(Double_t energy) { corrected_energy = energy; }
-    void SetBaselineEstimates(Double_t b1, Double_t b2) { baseline1 = b1; baseline2 = b2; }
-    std::pair<Double_t,Double_t> GetCalculatedBaseline() { return std::make_pair(baseline1,baseline2); }
 
   private:
     bool is_segment;
@@ -127,11 +125,7 @@ class TCagraHit : public TDetectorHit {
     Short_t prev_postrise_begin_sample;
     Short_t prerise_begin;
     Short_t prerise_end;
-    Double_t baseline1;
-    Double_t baseline2;
     Double_t corrected_energy;
-
-
 
     Double_t fit_params[2]; //!
 

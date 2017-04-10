@@ -287,9 +287,6 @@ int TCagra::BuildHits(std::vector<TRawEvent>& raw_data){
     hit->SetPreRiseEndSample(anl.GetPreEnd());
     hit->SetPreRiseBeginSample(anl.GetPreBegin());
     hit->SetTimingMarks(anl.GetTimingMarks());
-    double baseline1 = double(anl.GetPostE()*anl.GetPreBegin() - anl.GetPreE()*anl.GetPostBegin())/((anl.GetPostE()-anl.GetPreE())-TANLEvent::GetShapingTime()*(anl.GetPostBegin()-anl.GetPreBegin()));
-    double baseline2 = double(anl.GetPreEnd()*anl.GetPostBegin() - anl.GetPreBegin()*anl.GetPostEnd())/((anl.GetPostBegin()-anl.GetPostEnd())-(anl.GetPreBegin()-anl.GetPreEnd()));
-    hit->SetBaselineEstimates(baseline1,baseline2);
 
   }
 
