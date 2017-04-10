@@ -32,6 +32,7 @@ public:
 
   bool CheckHit(UInt_t i) { return (i < GRHits.size()) ? true : false; }
   RCNPEvent& GetGRHit(UInt_t i) { return GRHits.at(i).GR(); }
+  size_t size() { return GRHits.size(); }
 
 private:
   virtual int BuildHits(std::vector<TRawEvent>& raw_data);

@@ -68,10 +68,10 @@ matplotlib.axes._axes.Axes.better_step = better_step
 matplotlib.axes._axes.Axes.fill_between_step = fill_between_step
 
 
-if __name__=='__main__':
-    data = np.random.normal(size=10000)
-    weights = 5*np.ones(shape=data.shape)
+# if __name__=='__main__':
+#     data = np.random.normal(size=10000)
+#     weights = 5*np.ones(shape=data.shape)
 
-    fig, axes = plt.subplots()
-    axes.hist_errors(data, weights=weights, range=(-5,5), bins=20)
-    plt.show()
+#     fig, axes = plt.subplots()
+#     axes.hist_errors(data, weights=weights, range=(-5,5), bins=20)
+#     plt.show()

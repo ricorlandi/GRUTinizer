@@ -27,11 +27,11 @@ d3_window {
 }
 
 GrandRaiden_Slope {
-  Value: -0.12129972575532295
+  Value: -0.12170971882837593
 }
 
 GrandRaiden_Offset {
-  Value: 2538.6778436100226
+  Value: 2547.2585747214243
 }
 
 A_Offset {

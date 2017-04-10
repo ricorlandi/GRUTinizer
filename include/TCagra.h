@@ -24,7 +24,7 @@ public:
   virtual void          InsertHit(const TDetectorHit& hit);
   virtual TDetectorHit& GetHit(int i)            { return cagra_hits.at(i); }
 
-  const TCagraHit& GetCagraHit(int i) { return cagra_hits.at(i); }
+  TCagraHit& GetCagraHit(int i) { return cagra_hits.at(i); }
   void PrintHit(int i){ cagra_hits.at(i).Print(); }
 
   static TVector3 GetSegmentPosition(int slot, char core, int seg);

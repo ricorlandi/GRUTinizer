@@ -35,12 +35,11 @@ GrandRaiden_Offset {
 }
 
 A_Offset {
-  Value: -0.70710181604379807
+  Value: 0.0
 }
 
 B_Offset {
-  Value: 4.4045630476343565
-
+  Value: 0.0
 }
 
 BeamKineticE {
@@ -49,7 +48,7 @@ BeamKineticE {
 }
 
 EnergyLoss {
-  Value: 0.961
+  Value: 0.44127
       // MeV
 }
 
@@ -59,7 +58,8 @@ EnergyLoss {
 // 56Fe  = 2
 // 24Mg  = 3
 // 93Nb  = 4
+// 93Nb2  = 5 // second set of Nb runs
 
 Target {
-  Value: 1
+  Value: 5
 }

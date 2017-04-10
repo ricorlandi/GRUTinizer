@@ -181,9 +181,13 @@ std::pair<double,double> TGrandRaidenHit::raytrace(double x, double a, double y,
   B=sum;
 
 
-  double a_offset = 0, b_offset = 0;
-  std::tie(a_offset,b_offset) = TGrandRaidenHit::GetAngleOffsets();
-  return std::pair<double,double>(A-a_offset*1000,B-b_offset*1000);
+  if (apply_offset) {
+    double a_offset = 0, b_offset = 0;
+    std::tie(a_offset,b_offset) = TGrandRaidenHit::GetAngleOffsets();
+    return std::pair<double,double>(A-a_offset,B-b_offset);
+  }
+
+  return std::pair<double,double>(A,B);
 }
 
 void TGrandRaidenHit::Copy(TObject& obj) const {

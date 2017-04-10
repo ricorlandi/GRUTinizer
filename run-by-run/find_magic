@@ -1,0 +1,1 @@
+find -type f -name *.hh -exec sed -i s/asdf/qwer/g {} \;

@@ -22,3 +22,4 @@ bin
 .grut_thread
 histos/MakeHistos.cxx
 include/GVersion.h
+analysis
