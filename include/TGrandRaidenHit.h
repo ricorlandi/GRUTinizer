@@ -35,14 +35,14 @@ class TGrandRaidenHit : public TDetectorHit {
     double   GetMomentum();
 
     std::pair<double,double> Raytrace(bool apply_offsets);
-    const std::vector<LaBrHit>& GetLaBr() { return labr_hits; }
-    const Double_t& GetMeanPlastE1() { return madc1; }
-    const Double_t& GetMeanPlastE2() { return madc2; }
-    const Double_t& GetMeanPlastE3() { return madc3; }
-    const Double_t& GetMeanPlastPos1() { return tpos1; }
-    const Double_t& GetMeanPlastPos2() { return tpos2; }
-    const Double_t& GetMeanPlastPos3() { return tpos3; }
-    const Long_t& GetTimestamp() { return Timestamp; }
+    std::vector<LaBrHit> GetLaBr() const { return labr_hits; }
+    Double_t GetMeanPlastE1() const { return madc1; }
+    Double_t GetMeanPlastE2() const { return madc2; }
+    Double_t GetMeanPlastE3() const { return madc3; }
+    Double_t GetMeanPlastPos1() const { return tpos1; }
+    Double_t GetMeanPlastPos2() const { return tpos2; }
+    Double_t GetMeanPlastPos3() const { return tpos3; }
+    Long_t GetTimestamp() const { return Timestamp; }
     RCNPEvent& GR() { return rcnp; }
     static void SetRaytraceParams(std::vector<double> apar, std::vector<double> bpar,
                                   size_t xdeg=3, size_t adeg=1, size_t ydeg=1, size_t bdeg=1);

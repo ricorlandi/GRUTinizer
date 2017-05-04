@@ -13,6 +13,7 @@
 #include "TRandom.h"
 #include "TObject.h"
 #include "TFile.h"
+#include "TGRUTint.h"
 #include "TCutG.h"
 #include "TVector3.h"
 #include "TPreserveGDirectory.h"
@@ -20,7 +21,10 @@
 #include "TGrandRaiden.h"
 #include "TANLEvent.h"
 #include "GValue.h"
+#include "GCutG.h"
 #include "TNucleus.h"
+#include "THnSparse.h"
+
 #include <tuple>
 
 #define BAD_NUM -441441
@@ -43,6 +47,7 @@ static string name;
 static string dirname="";
 static stringstream stream;
 
+static TNucleus he4("4He");
 static TNucleus li6("6Li");
 static TNucleus c12("12C");
 static TNucleus mg24("24Mg");
@@ -53,7 +58,7 @@ static TNucleus sn124("124Sn");
 static const double a_offset = std::isnan(GValue::Value("A_Offset")) ? 0 : GValue::Value("A_Offset");
 static const double b_offset = std::isnan(GValue::Value("B_Offset")) ? 0 : GValue::Value("B_Offset");
 
-static const double m_projectile = li6.GetMass();
+static double m_projectile = li6.GetMass();
 static const double eloss = GValue::Value("EnergyLoss");
 static const double ke_projectile = GValue::Value("BeamKineticE") - eloss;
 static const double e_projectile = m_projectile + ke_projectile;
@@ -297,6 +302,24 @@ private:
 					     6.867173,21.474127,20.714631,19.395711,0};
 };
 
+// cuts
+static GCutG* he4_de = nullptr;
+static GCutG* li6_de = nullptr;
+static GCutG* tdc_band_cut = nullptr;
+static GCutG* tdc_lower_cut = nullptr;
+static GCutG* tdc_under_cut = nullptr;
+static GCutG* tdc_peak_cut = nullptr;
+static GCutG* adc12_pid_reject_cut = nullptr;
+static GCutG* tdc1_reject_low_cut = nullptr;
+
+int GetRunNumber() {
+  auto current_fn = std::string(gChain->GetFile()->GetName());
+  current_fn = (current_fn.substr(current_fn.size()-9,4));
+  stringstream rnstream(current_fn);
+  int run_num; rnstream >> run_num;
+  return run_num;
+}
+static std::map<int, double> time_cuts = { {4033,900.}, {4034,1900.}, {4035,3100.}, {4039,800.}, {4056,900.} };
 
 ///=============Mass definition============
 #define aum 931.494043    // in MeV

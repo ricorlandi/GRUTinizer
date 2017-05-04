@@ -1,14 +1,26 @@
 #include "TRuntimeObjects.h"
 #include "e441.h"
 #include <set>
+#include <array>
 
 template<typename ...Args>
 void hist(bool conditional, TRuntimeObjects& obj, Args&&... args) {
   if (conditional) { obj.FillHistogram(std::forward<Args>(args)...); }
 }
 
+template<typename ...Args>
+void profile(bool conditional, TRuntimeObjects& obj, Args&&... args) {
+  if (conditional) { obj.FillProfileHist(std::forward<Args>(args)...); }
+}
+
 
 static double m_target = 0;
+static int run_number = 0;
+constexpr double de1_x_m = (84.8796-74)/(379.776+512.122);
+constexpr double de1_a_m = (77.3519-83.4495)/(0.143797+0.0864662);
+constexpr double de1_x_m2 = (83.4495-80.8362)/(537.594+595.865);
+constexpr double de2_a_m = (66.4634-84.7561)/(0.184211+0.132519);
+constexpr double de2_x_m2 = (80.4007-76.0453)/(537.594+584.586);
 
 // ----------------------------------------------------------------------
 // extern "C" is needed to prevent name mangling.
@@ -23,7 +35,51 @@ void MakeHistograms(TRuntimeObjects& obj) {
   TCagra* cagra = obj.GetDetector<TCagra>();
   TGrandRaiden* gr = obj.GetDetector<TGrandRaiden>();
 
+
+  if (!run_number) {
+    run_number = GetRunNumber();
+  }
+
   if (gr) {
+
+    if (gr->size() > 0) {
+
+      // remove events in which the tdc timing became poor
+      auto& hit = const_cast<TGrandRaidenHit&>(gr->GetGrandRaidenHit(0));
+      if (time_cuts.count(run_number) > 0) {
+        static ULong_t first_gr_ts = 0;
+        if (first_gr_ts <= 1e6) {first_gr_ts = hit.GetTimestamp(); std::cout << "GR Timestamp:" << first_gr_ts << std::endl;}
+        else {
+          double gr_time = (hit.GetTimestamp()-first_gr_ts)*10/1.0e9;
+          if (gr_time > time_cuts[run_number]) {
+            return;
+          }
+        }
+      }
+      auto xvec = hit.GR().GR_X();
+      auto avec = hit.GR().GR_TH();
+      auto tdc = hit.GR().GR_TDC();
+      if (xvec && avec && tdc) { // biases - cuts
+        auto x = (*xvec)[0];
+        auto a = (*avec)[0];
+        double pos1 = (*tdc)[0] - (*tdc)[1];
+        auto de1_cor = hit.GetMeanPlastE1() - de1_x_m*x;
+        de1_cor -= (de1_a_m*a + de1_x_m2*x);
+        auto de2_cor = hit.GetMeanPlastE2() - (5.412E-05*x*x - 1.638e-02*x);
+        de2_cor -= (de2_a_m*a + de2_x_m2*x);
+
+        if (adc12_pid_reject_cut->IsInside(de1_cor,de2_cor)) { return; }
+        if (tdc1_reject_low_cut->IsInside(x,pos1)) { return; }
+      }
+
+      //-------------------------------------
+      //// bias introducing gate
+      // if (!li6_de->IsInside(hit.GetMeanPlastE1(),hit.GetMeanPlastE2())) { return; }
+      // if (!he4_de->IsInside(hit.GetMeanPlastE1(),hit.GetMeanPlastE2())) { return; }
+      //-------------------------------------
+    }
+
+
     MakeGrandRaidenHistograms(obj,*gr);
   }
   if (cagra) {
@@ -272,6 +328,11 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
     }
     prev_ts = hit.GetTimestamp();
 
+
+    static ULong_t first_gr_ts = 0;
+    if (first_gr_ts <= 1e6) {first_gr_ts = hit.GetTimestamp(); std::cout << "GR Timestamp:" << first_gr_ts << std::endl;}
+
+
     auto rf = rcnp.GR_RF(0);
     if (rf != BAD_NUM) {
       hist(false,obj,"GR","GR_RF",1000,0,0,rf);
@@ -309,25 +370,25 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       }
 
       dirname = "GR_new";
-      hist(false,obj,dirname,"x[a]",300,-0.15,0.15,rcnp.GR_TH(0),1200,-600,600,rcnp.GR_X(0));
-      hist(false,obj,dirname,"x[y]",200,-100,100,rcnp.GR_Y(0),1200,-600,600,rcnp.GR_X(0));
-      hist(false,obj,dirname,"x[b]",250,-0.1,0.1,rcnp.GR_PH(0),1200,-600,600,rcnp.GR_X(0));
-      //hist(false,obj,dirname,"X[RF]",500,0,0,rcnp.GR_RF(0),1200,-600,600,rcnp.GR_X(0));
-      hist(false,obj,dirname,"RF[a]",1000,-1,1,rcnp.GR_TH(0),500,0,0,rcnp.GR_RF(0));
+      hist(true,obj,dirname,"x[a]",300,-0.15,0.15,rcnp.GR_TH(0),1200,-600,600,rcnp.GR_X(0));
+      hist(true,obj,dirname,"x[y]",200,-100,100,rcnp.GR_Y(0),1200,-600,600,rcnp.GR_X(0));
+      hist(true,obj,dirname,"x[b]",250,-0.1,0.1,rcnp.GR_PH(0),1200,-600,600,rcnp.GR_X(0));
+      //hist(true,obj,dirname,"X[RF]",500,0,0,rcnp.GR_RF(0),1200,-600,600,rcnp.GR_X(0));
+      hist(true,obj,dirname,"RF[a]",1000,-0.15,0.15,rcnp.GR_TH(0),500,0,0,rcnp.GR_RF(0));
 
       auto rf_Acor = rcnp.GR_RF(0)-(-1914.5*rcnp.GR_TH(0));
-      hist(false,obj,dirname,"RF_acor[a]",1000,-1,1,rcnp.GR_TH(0),500,0,0,rf_Acor);
-      hist(false,obj,dirname,"RF[x]",1200,-600,600,rcnp.GR_X(0),500,0,0,rcnp.GR_RF(0));
-      hist(false,obj,dirname,"RF_acor[x]",1200,-600,600,rcnp.GR_X(0),500,0,0,rf_Acor);
+      hist(true,obj,dirname,"RF_acor[a]",1000,-1,1,rcnp.GR_TH(0),500,0,0,rf_Acor);
+      hist(true,obj,dirname,"RF[x]",1200,-600,600,rcnp.GR_X(0),500,0,0,rcnp.GR_RF(0));
+      hist(true,obj,dirname,"RF_acor[x]",1200,-600,600,rcnp.GR_X(0),500,0,0,rf_Acor);
       auto rf_Acor_Xcor = rf_Acor - (0.17205*rcnp.GR_X(0));
-      hist(false,obj,dirname,"RF_Acor_Xcor[x]",1200,-600,600,rcnp.GR_X(0),500,0,0,rf_Acor_Xcor);
-      hist(false,obj,dirname,"DE1[x]",1200,-600,600,rcnp.GR_X(0),2000,0,2000, hit.GetMeanPlastE1());
-      hist(false,obj,dirname,"DE2[x]",1200,-600,600,rcnp.GR_X(0),2000,0,2000, hit.GetMeanPlastE2());
-      hist(false,obj,dirname,"DE3[x]",1200,-600,600,rcnp.GR_X(0),2000,0,2000, hit.GetMeanPlastE3());
+      hist(true,obj,dirname,"RF_Acor_Xcor[x]",1200,-600,600,rcnp.GR_X(0),500,0,0,rf_Acor_Xcor);
+      hist(true,obj,dirname,"DE1[x]",1200,-600,600,rcnp.GR_X(0),2000,0,2000, hit.GetMeanPlastE1());
+      hist(true,obj,dirname,"DE2[x]",1200,-600,600,rcnp.GR_X(0),2000,0,2000, hit.GetMeanPlastE2());
+      hist(true,obj,dirname,"DE3[x]",1200,-600,600,rcnp.GR_X(0),2000,0,2000, hit.GetMeanPlastE3());
 
-      hist(false,obj,dirname,"y[a]",300,-0.15,0.15,rcnp.GR_TH(0),200,-100,100,rcnp.GR_Y(0));
-      hist(false,obj,dirname,"y[b]",250,-0.1,0.1,rcnp.GR_PH(0),200,-100,100,rcnp.GR_Y(0));
-      hist(false,obj,dirname,"y[x]",1200,-600,600,rcnp.GR_X(0),200,-100,100,rcnp.GR_Y(0));
+      hist(true,obj,dirname,"y[a]",300,-0.15,0.15,rcnp.GR_TH(0),200,-100,100,rcnp.GR_Y(0));
+      hist(true,obj,dirname,"y[b]",250,-0.1,0.1,rcnp.GR_PH(0),200,-100,100,rcnp.GR_Y(0));
+      hist(true,obj,dirname,"y[x]",1200,-600,600,rcnp.GR_X(0),200,-100,100,rcnp.GR_Y(0));
       //hist(false,obj,dirname,"Y[X]",1200,-600,600,rcnp.GR_X(0),200,-100,100,rcnp.GR_Y(0));
       //hist(false,obj,dirname,"Y[X]",1200,-600,600,rcnp.GR_X(0),200,-100,100,rcnp.GR_Y(0));
       //hist(false,obj,dirname,"Y[X]",1200,-600,600,rcnp.GR_X(0),200,-100,100,rcnp.GR_Y(0));
@@ -342,18 +403,32 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
         hist(false,obj,dirname,"y[b]cor",250,-0.1,0.1,rcnp.GR_PH(0),200,-100,100,ycor);
       }
 
-      hist(false,obj,dirname,"DE1[RF]",1000,0,0,rf,2000,0,2000, hit.GetMeanPlastE1());
-      hist(false,obj,dirname,"DE2[RF]",1000,0,0,rf,2000,0,2000, hit.GetMeanPlastE2());
-      hist(false,obj,dirname,"DE3[RF]",1000,0,0,rf,2000,0,2000, hit.GetMeanPlastE3());
+      hist(true,obj,dirname,"DE1[RF]",1000,0,0,rf,2000,0,2000, hit.GetMeanPlastE1());
+      hist(true,obj,dirname,"DE2[RF]",1000,0,0,rf,2000,0,2000, hit.GetMeanPlastE2());
+      hist(true,obj,dirname,"DE3[RF]",1000,0,0,rf,2000,0,2000, hit.GetMeanPlastE3());
       
-      hist(false,obj,dirname,"DE1[RF_Acor_Xcor]",500,0,0,rf_Acor_Xcor,1000,0,2000, hit.GetMeanPlastE1());
-      hist(false,obj,dirname,"DE2[RF_Acor_Xcor]",500,0,0,rf_Acor_Xcor,1000,0,2000, hit.GetMeanPlastE2());
-      hist(false,obj,dirname,"DE1[dE2]",2000,0,2000, hit.GetMeanPlastE2(),2000,0,2000, hit.GetMeanPlastE1());
-      hist(false,obj,dirname,"DE2[DE3]",2000,0,2000, hit.GetMeanPlastE2(),2000,0,2000, hit.GetMeanPlastE3());
+      hist(true,obj,dirname,"DE1[RF_Acor_Xcor]",500,0,0,rf_Acor_Xcor,1000,0,2000, hit.GetMeanPlastE1());
+      hist(true,obj,dirname,"DE2[RF_Acor_Xcor]",500,0,0,rf_Acor_Xcor,1000,0,2000, hit.GetMeanPlastE2());
+      hist(true,obj,dirname,"DE1[dE2]",2000,0,2000, hit.GetMeanPlastE2(),2000,0,2000, hit.GetMeanPlastE1());
+      hist(true,obj,dirname,"DE2[DE3]",2000,0,2000, hit.GetMeanPlastE2(),2000,0,2000, hit.GetMeanPlastE3());
       
-      hist(false,obj,dirname,"dE1[a]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE1());
-      hist(false,obj,dirname,"dE2[a]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE2());
-      hist(false,obj,dirname,"dE3[a]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE3());
+      hist(true,obj,dirname,"dE1[a]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE1());
+      hist(true,obj,dirname,"dE2[a]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE2());
+      hist(true,obj,dirname,"dE3[a]",1000,-1,1, rcnp.GR_TH(0),2000,0,2000, hit.GetMeanPlastE3());
+
+      //auto x = rcnp.GR_X(0);
+      // hist(false,obj,dirname,"Mean1[x]",1200,-600,600,x,80,630,670, hit.GetMeanPlastPos1());
+      // hist(false,obj,dirname,"Mean2[x]",1200,-600,600,x,80,675,715, hit.GetMeanPlastPos2());
+      // auto tdc = rcnp.GR_TDC();
+      // if (tdc) {
+      //   double pos1 = (*tdc)[0] - (*tdc)[1];
+      //   double pos2 = (*tdc)[2] - (*tdc)[3];
+      //   double pos3 = (*tdc)[4] - (*tdc)[5];
+      //   hist(true,obj,dirname,"Mean1[x]",1200,-600,600,x,240,-120,120, pos1);
+      //   hist(true,obj,dirname,"Mean2[x]",1200,-600,600,x,240,-120,120, pos2);
+      //   //hist(true,obj,dirname,"Mean3[x]",1200,-600,600,x,200,-100,100, pos3);
+      // }
+
 
 
       // {
@@ -373,7 +448,7 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       // raytracing
       double A=0,B=0;
       std::tie(A,B) = hit.Raytrace(true);
-      hist(true,obj,dirname,"B[A]",500,60,100,A,500,-65,65,B);
+      hist(true,obj,dirname,"B[A]",500,-25,-25,A,500,-65,65,B);
       hist(true,obj,dirname,"B[b]",500,-0.1,0.1,rcnp.GR_PH(0),500,-65,65,B);
 
 
@@ -386,7 +461,6 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       auto ejectile = hit.GetEjectileVector(true);
 
 
-      hist(true,obj,"MissingMass","A[x]",1200,-600,600,rcnp.GR_X(0),500,-25,25,A);
       hist(true,obj,"MissingMass","B[x]",1200,-600,600,rcnp.GR_X(0),500,-65,65,B);
       auto thlab = std::sqrt(A*A+B*B)/1000;
       hist(true,obj,"MissingMass","A[p]",1200,2480,2620,p_ejectile,500,-25,25,A);
@@ -481,11 +555,22 @@ void MakeGrandRaidenHistograms(TRuntimeObjects& obj, TGrandRaiden& gr) {
       hist(false,obj,"MissingMass","ThetaCM",300,0,0.15,theta_cm);
       hist(true,obj,"MissingMass","ReconstructedEx",600,5,65,Ex);
       hist(true,obj,"MissingMass","ThetaLab[Ex]",600,5,65,Ex,300,0,0.15,ejectile.Theta());
-      hist(false,obj,"MissingMass","A[Ex]",600,5,65,Ex,500,0,0,A);
-      hist(false,obj,"MissingMass","B[Ex]",600,5,65,Ex,500,0,0,B);
-      hist(false,obj,"MissingMass","afp[Ex]",600,5,65,Ex,500,0,0,rcnp.GR_TH(0));
-      hist(false,obj,"MissingMass","yfp[Ex]",600,5,65,Ex,500,0,0,rcnp.GR_Y(0));
+      hist(true,obj,"MissingMass","A[Ex]",600,5,65,Ex,500,-25,25,A);
+      hist(true,obj,"MissingMass","B[Ex]",600,5,65,Ex,500,-65,65,B);
+      hist(true,obj,"MissingMass","afp[Ex]",600,5,65,Ex,500,0,0,rcnp.GR_TH(0));
+      hist(true,obj,"MissingMass","yfp[Ex]",600,5,65,Ex,500,0,0,rcnp.GR_Y(0));
 
+      if (first_gr_ts > 1e6) {
+        hist(true,obj,"GR_vs_time","rf_cor[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,900,200,2000,rf_Acor_Xcor);
+        hist(true,obj,"GR_vs_time","rf[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,900,200,2000,rf);
+        hist(true,obj,"GR_vs_time","x[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9, 1200,-600,600, rcnp.GR_X(0));
+        hist(true,obj,"GR_vs_time","y[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,200,-100,100, rcnp.GR_Y(0));
+        hist(true,obj,"GR_vs_time","a[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,100,-0.2,0.2, rcnp.GR_TH(0));
+        hist(true,obj,"GR_vs_time","b[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,100,-0.2,0.2, rcnp.GR_PH(0));
+        hist(true,obj,"GR_vs_time","MissingMassEx[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,600,5,65,Ex);
+        //hist(false,obj,"GR_vs_time","Mean1[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,80,630,670, hit.GetMeanPlastPos1());
+        //hist(false,obj,"GR_vs_time","Mean2[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,80,675,715, hit.GetMeanPlastPos2());
+      }
 
       if (ejectile.Theta() < 0.01) {
         hist(false,obj,"MissingMass","ReconstructedEx_0_10_mrad",1024,0,0,Ex);
@@ -580,6 +665,17 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
     auto a = rcnp.GR_TH(0);
     auto rf_cor = rf - -1121.882*a;
 
+    static double prev_gr_time = 0;
+
+    stream.str("");
+    stream << "GRTimeDiff";
+    hist(true,obj,dirname,stream.str().c_str(),1000,0,50000,grtime-prev_gr_time);
+    prev_gr_time = grtime;
+
+    static ULong_t first_gr_ts = 0;
+    if (first_gr_ts <= 1e6) {first_gr_ts = hit.GetTimestamp(); std::cout << "GR Timestamp:" << first_gr_ts << std::endl;}
+
+
     auto hist_vec = [](
       bool conditional,
       TRuntimeObjects& obj,
@@ -618,21 +714,94 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
 
     if (rcnp.GR_RAYID(0) == 0) {
 
-      hist(false,obj,dirname,"RF_acor[A]",1000,-1,1,a,500,600,1800,rf_cor);
-      hist(false,obj,dirname,"RF_acor[X]",1200,-600,600,x,500,600,1800,rf_cor);
+      hist(true,obj,dirname,"RF_acor[A]",1000,-1,1,a,500,600,1800,rf_cor);
+      hist(true,obj,dirname,"RF_acor[X]",1200,-600,600,x,500,600,1800,rf_cor);
 
       rf_cor -= 0.119966*x;
-      hist(false,obj,dirname,"RFcor",1000,0,0,rf_cor);
-      hist(false,obj,dirname,"RF_axcor[X]",1200,-600,600,x,500,600,1800,rf_cor);
-      hist(false,obj,dirname,"RF_axcor[A]",1000,-1,1,a,500,600,1800,rf_cor);
+      hist(true,obj,dirname,"RFcor",1000,0,0,rf_cor);
+      hist(true,obj,dirname,"RF_axcor[X]",1200,-600,600,x,500,600,1800,rf_cor);
+      hist(true,obj,dirname,"RF_axcor[A]",1000,-1,1,a,500,600,1800,rf_cor);
 
-      hist(false,obj,dirname,"DE1[RFcor]",900,200,2000,rf_cor,350,0,350, hit.GetMeanPlastE1());
-      hist(false,obj,dirname,"DE2[RFcor]",900,200,2000,rf_cor,350,0,350, hit.GetMeanPlastE2());
-      hist(false,obj,dirname,"DE3[RFcor]",900,200,2000,rf_cor,2000,0,1300, hit.GetMeanPlastE3());
+      hist(true,obj,dirname,"DE1[RFcor]",900,200,2000,rf_cor,200,0,200, hit.GetMeanPlastE1());
+      hist(true,obj,dirname,"DE2[RFcor]",900,200,2000,rf_cor,200,0,200, hit.GetMeanPlastE2());
+      hist(true,obj,dirname,"DE3[RFcor]",900,200,2000,rf_cor,2000,0,1300, hit.GetMeanPlastE3());
 
-      hist(false,obj,dirname,"DE1",350,0,350, hit.GetMeanPlastE1());
-      hist(false,obj,dirname,"DE2",350,0,350, hit.GetMeanPlastE2());
-      hist(false,obj,dirname,"DE3",2000,0,0, hit.GetMeanPlastE3());
+
+      if (first_gr_ts > 1e6) {
+        hist(true,obj,dirname+"_GR_vs_time","rf[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,900,200,2000,rf_cor);
+        hist(true,obj,dirname+"_GR_vs_time","DE1[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,200,0,200, hit.GetMeanPlastE1());
+        hist(true,obj,dirname+"_GR_vs_time","DE2[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,200,0,200, hit.GetMeanPlastE2());
+        hist(true,obj,dirname+"_GR_vs_time","DE3[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,2000,0,1300, hit.GetMeanPlastE3());
+
+        // hist(false,obj,dirname+"_GR_vs_time","Mean1[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,200,-100,100, pos1);
+        // hist(false,obj,dirname+"_GR_vs_time","Mean2[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,200,-100,100, pos2);
+        // hist(false,obj,dirname+"_GR_vs_time","Mean3[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,200,-100,100, pos3);
+        //hist(false,obj,dirname+"_GR_vs_time","Mean3[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,200,-100,100, hit.GetMeanPlastPos3());
+      }
+
+      hist(true,obj,dirname,"DE1",200,0,200, hit.GetMeanPlastE1());
+      hist(true,obj,dirname,"DE2",200,0,200, hit.GetMeanPlastE2());
+      hist(true,obj,dirname,"DE3",1000,0,1000, hit.GetMeanPlastE3());
+
+      hist(true,obj,dirname,"DE1[x]",1200,-600,600,x,200,0,200, hit.GetMeanPlastE1());
+      hist(true,obj,dirname,"DE1[a]",300,-0.15,0.15,a,200,0,200, hit.GetMeanPlastE1());
+
+
+      auto tdc = rcnp.GR_TDC();
+      if (tdc) {
+        double pos1 = (*tdc)[0] - (*tdc)[1];
+        double pos2 = (*tdc)[2] - (*tdc)[3];
+        double pos3 = (*tdc)[4] - (*tdc)[5];
+
+        hist(true,obj,dirname,"Mean1[x]",1200,-600,600,x,240,-120,120, pos1);
+        hist(true,obj,dirname,"Mean2[x]",1200,-600,600,x,240,-120,120, pos2);
+        hist(true,obj,dirname,"Mean1[a]",300,-0.15,0.15,a,240,-120,120, pos1);
+        hist(true,obj,dirname,"Mean2[a]",300,-0.15,0.15,a,240,-120,120, pos2);
+
+        hist(true,obj,dirname,"tdc2pos[tdc1pos]",240,-120,120, pos1,240,-120,120, pos2);
+        hist(true,obj,dirname,"tdc_dx[a]",300,-0.15,0.15,a,60,-75,-15,pos2-pos1);
+
+      }
+
+
+
+      static ULong_t event_counter = 0;
+      static int hist_num = 0;
+      if (event_counter++ > 1e6) {
+        hist_num++;
+        event_counter = 0;
+      }
+      stream.str(""); stream << "DE1[x]_profile_" << hist_num;
+      profile(true,obj,dirname,stream.str(), 1200,-600,600,x,hit.GetMeanPlastE1());
+      stream.str(""); stream << "DE2[x]_profile_" << hist_num;
+      profile(true,obj,dirname,stream.str(), 1200,-600,600,x,hit.GetMeanPlastE2());
+
+
+      auto de1_cor = hit.GetMeanPlastE1() - de1_x_m*x;
+      hist(true,obj,dirname,"DE1_xcor[x]",1200,-600,600,x,200,0,200, de1_cor);
+      hist(true,obj,dirname,"DE1_xcor[a]",300,-0.15,0.15,a,200,0,200, de1_cor);
+      de1_cor -= (de1_a_m*a + de1_x_m2*x);
+      hist(true,obj,dirname,"DE1_axcor[x]",1200,-600,600,x,200,0,200, de1_cor);
+      hist(true,obj,dirname,"DE1_axcor[a]",300,-0.15,0.15,a,200,0,200, de1_cor);
+
+
+      hist(true,obj,dirname,"DE2[x]",1200,-600,600,x,200,0,200, hit.GetMeanPlastE2());
+      hist(true,obj,dirname,"DE2[a]",300,-0.15,0.15,a,200,0,200, hit.GetMeanPlastE2());
+      auto de2_cor = hit.GetMeanPlastE2() - (5.412E-05*x*x - 1.638e-02*x);
+      hist(true,obj,dirname,"DE2_xcor[x]",1200,-600,600,x,200,0,200, de2_cor);
+      hist(true,obj,dirname,"DE2_xcor[a]",300,-0.15,0.15,a,200,0,200, de2_cor);
+      de2_cor -= (de2_a_m*a + de2_x_m2*x);
+      hist(true,obj,dirname,"DE2_axcor[x]",1200,-600,600,x,200,0,200, de2_cor);
+      hist(true,obj,dirname,"DE2_axcor[a]",300,-0.15,0.15,a,200,0,200, de2_cor);
+
+
+      hist(true,obj,dirname,"DE2[DE1]",200,0,200, hit.GetMeanPlastE1() ,200,0,200, hit.GetMeanPlastE2());
+      hist(true,obj,dirname,"DE2_axcor[DE1_axcor]",200,0,200, de1_cor ,200,0,200, de2_cor);
+
+
+      hist(true,obj,dirname,"DE3[x]",1200,-600,600,x,1000,0,1000, hit.GetMeanPlastE3());
+      hist(true,obj,dirname,"DE3[a]",300,-0.15,0.15,a,1000,0,1000, hit.GetMeanPlastE3());
+
 
       // PID gate (it's pretty clean so only an RF gate is really needed)
       if ((rf_cor >= 900 && rf_cor < 975 ) || (rf_cor >=1700 && rf_cor < 1775)) {
@@ -643,8 +812,6 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
         hist(false,obj,dirname,"DE2[RFcor]rfgate",900,200,2000,rf_cor,350,0,350, hit.GetMeanPlastE2());
         hist(false,obj,dirname,"DE3[RFcor]rfgate",900,200,2000,rf_cor,2000,0,1300, hit.GetMeanPlastE3());
 
-
-
         if (cagra) {
 
           // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -652,8 +819,10 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
           // ------------------------------------------------------------------------------------------------
           // bool high_energy_hit = false;
           // for (auto& core : *cagra) {
-          //   if (core.GetCorrectedEnergy() > 10000) {
+          //   double e = core.GetCorrectedEnergy();
+          //   if (e > 10000) {
           //     high_energy_hit = true;
+          //     break;
           //   }
           // }
           // if (!high_energy_hit) { return; }
@@ -663,9 +832,28 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
 
           auto ycor = rcnp.GR_Y(0)+892.46*rcnp.GR_PH(0);
 
-          //for (auto& core_hit : *cagra) {
+          // //for (auto& core_hit : *cagra) {
+          // std::cout << gr.size() << " " << cagra->size() << std::endl;
+          // std::cout << e1 << " " << e2 << std::endl;
+          // for (auto& core_hit : *cagra) {
+          //   std::cout << core_hit.GetCorrectedEnergy() << "  ";
+          // } std::cout << endl;
+
+
+          //bool only_one_gr = false; // !!!!!!!!! bias
+
           for (auto ngam1=0u; ngam1 < cagra->size(); ngam1++) {
             auto& core_hit = cagra->GetCagraHit(ngam1);
+
+
+            // ----- bias introducing gate ------------------------
+            // if (only_one_gr) { continue; } // !!!!!!!!!!!!!!!!!!!!!!
+            // double e = core_hit.GetCorrectedEnergy();
+            // if (e > 10000 && e < 16000) {
+            //   only_one_gr = true;
+            // } else { continue; }
+            // ----- bias introducing gate ------------------------
+
 
             int detector = core_hit.GetDetnum();
             char core_leaf = core_hit.GetLeaf();
@@ -680,7 +868,12 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
             bool bgo_hit = false;
             auto cagratime = core_hit.Timestamp();
             auto tdiff = cagratime-grtime;
-            hist(false,obj,dirname,"Diff_CAGRA_GR", 1000,-500,1500,tdiff);
+            hist(true,obj,dirname,"Diff_CAGRA_GR", 900,-200,700,tdiff);
+            stream.str("");
+            stream << "TimeDiff_" << detector << "_" << chan;
+            hist(true,obj,dirname+"_Coincident",stream.str().c_str(),1000,-500,1500,tdiff);
+
+
 
             // doppler reconstruction
             auto Ecm = core_hit.GetDoppler(beta,pos::core_only);
@@ -703,6 +896,8 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
 
 
 
+            //bool bad_gg_timing = false; // !!!!!!!!! bias
+
 
             // gamma-gamma coincidences
             for (auto ngam2=0u; ngam2 < cagra->size(); ngam2++) {
@@ -711,7 +906,14 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
                 // timing spectra
                 auto t1 = core_hit.Timestamp()*10;  // nanosec
                 auto t2 = other_hit.Timestamp()*10; // nanosec
+
+                // -----------------------------------------
+                // if (std::abs(t2-t1) > 50) { bad_gg_timing = true; break; } // bias
+                // -----------------------------------------
+
+
                 hist(true,obj,dirname,"Timing(gamma-gamma)",400,-2000,2000,t2-t1);
+
 
                 if (std::abs(t2-t1) < 150. /* ns */) {
                   hist(true,obj,dirname,
@@ -727,12 +929,24 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
               }
             } // end gamma-gamma coincidence
 
-
+            // -----------------------------------------
+            // if (bad_gg_timing) { continue; } // bias
+            // -----------------------------------------
 
             auto e_ejectile = TMath::Sqrt(p_ejectile*p_ejectile+m_projectile*m_projectile);
             auto ke_ejectile = e_ejectile - m_projectile;
             double theta_cm=0,mmEx=0,J_L=0;
             std::tie(theta_cm,mmEx,J_L) = kine_2b(m_projectile,m_target,m_projectile,m_target,ke_projectile,ejectile.Theta(), ke_ejectile);
+
+            // p_proj - p_ejectile = p_recoil
+            auto p_missing = projectile - ejectile;
+            // E_proj + E_target = E_ejectile + E_recoil
+            // E_proj + m_target - E_ejectile = E_recoil
+            auto e_missing = e_projectile + m_target - e_ejectile;
+            // m_missing = sqrt(E_recoil**2 + p_recoil**2)
+            auto m_missing = std::sqrt(std::pow(e_missing,2) + std::pow(p_missing.Mag(),2));
+            // ex_recoil = m_missing - m_recoil
+            auto ex_missing = m_missing - m_target;
 
 
             hist(true,obj,dirname,"Ecm_particle[Elab]",
@@ -790,6 +1004,18 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
 
                 hist(true,obj,dirname,"MissingMassThetaCM",300,0,0,theta_cm);
                 hist(true,obj,dirname,"MissingMassEx",600,5,65,mmEx);
+                hist(true,obj,dirname,"MissingMassExHe4",600,0,0,mmEx);
+
+                if (first_gr_ts > 1e6) {
+                  hist(true,obj,dirname+"_GR_vs_time","x[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9, 1200,-600,600, rcnp.GR_X(0));
+                  hist(true,obj,dirname+"_GR_vs_time","y[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,200,-100,100, rcnp.GR_Y(0));
+                  hist(true,obj,dirname+"_GR_vs_time","a[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,100,-0.2,0.2, rcnp.GR_TH(0));
+                  hist(true,obj,dirname+"_GR_vs_time","b[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,100,-0.2,0.2, rcnp.GR_PH(0));
+                  hist(true,obj,dirname+"_GR_vs_time","A[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,500,-25,25, A);
+                  hist(true,obj,dirname+"_GR_vs_time","B[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,500,-65,65, B);
+                  hist(true,obj,dirname+"_GR_vs_time","B[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,300,0,0.15,ejectile.Theta());
+                  hist(true,obj,dirname+"_GR_vs_time","MissingMassEx[t]",1000,0,4000,(hit.GetTimestamp()-first_gr_ts)*10/1.0e9,600,5,65,mmEx);
+                }
 
 
 
@@ -888,6 +1114,41 @@ void MakeGRCorrections(TRuntimeObjects& obj, TGrandRaiden& gr, TCagra* cagra, st
                 hist(true,obj,dirname,"THgam[p_final]",1200,2480,2620,ejectile.Mag(),500,80,150,(180/TMath::Pi())*thgam);
                 hist(true,obj,dirname,"THgam[mmEx]",600,5,65,mmEx,500,80,150,(180/TMath::Pi())*thgam);
                 hist(true,obj,dirname,"ThetaLab[mmEx]",600,5,65,mmEx,300,0,0.15,theta_lab);
+                hist(true,obj,dirname,"A[mmEx]",600,5,65,mmEx,500,-25,25,A);
+                hist(true,obj,dirname,"B[mmEx]",600,5,65,mmEx,500,-65,65,B);
+
+                // gamma angle ranges
+                std::array<std::array<int,2>,4> ranges = {{{80,86},{93,98},{127,131},{138,142}}};
+                static std::array<std::string,4> clover_pos = {"forward_90","backward_90","forward_135","backward_135"};
+                for (auto ii=0u; ii<ranges.size(); ii++) {
+                  auto& range = ranges[ii];
+                  auto thgamdeg = (180/TMath::Pi())*thgam;
+                  if (thgamdeg > range[0] && thgamdeg < range[1]) {
+
+                    hist(true,obj,dirname,"A[x]_"+clover_pos[ii],1200,-600,600,rcnp.GR_X(0),500,-25,25,A);
+                    hist(true,obj,dirname,"B[x_"+clover_pos[ii],1200,-600,600,rcnp.GR_X(0),500,-65,65,B);
+                    hist(true,obj,dirname,"A[p_final_"+clover_pos[ii],1200,2480,2620,ejectile.Mag(),500,-25,25,A);
+                    hist(true,obj,dirname,"B[p_final_"+clover_pos[ii],1200,2480,2620,ejectile.Mag(),500,-65,65,B);
+                    hist(true,obj,dirname,"ThetaLab[mmEx_"+clover_pos[ii],600,5,65,mmEx,300,0,0.15,theta_lab);
+                    hist(true,obj,dirname,"A[mmEx_"+clover_pos[ii],600,5,65,mmEx,500,-25,25,A);
+                    hist(true,obj,dirname,"B[mmEx_"+clover_pos[ii],600,5,65,mmEx,500,-65,65,B);
+                  }
+                }
+
+
+                hist(true,obj,dirname,"KE_ejectile",1024,500,600,ke_ejectile);
+
+                // added per Remco's request on 4/14/2017
+                if (std::abs(A) < 5 && std::abs(B) < 5) {
+                  hist(true,obj,dirname+"_small_angle","THgam[mmEx]",600,5,65,mmEx,500,80,150,(180/TMath::Pi())*thgam);
+                  hist(true,obj,dirname+"_small_angle","ThetaLab[mmEx]",600,5,65,mmEx,300,0,0.15,theta_lab);
+                  hist(true,obj,dirname+"_small_angle","mmEx",600,5,65,mmEx);
+                  hist(true,obj,dirname+"_small_angle","KE_invariant",1024,500,600,ke_invariant);
+                  hist(true,obj,dirname+"_small_angle","KE_ejectile",1024,500,600,ke_ejectile);
+                  hist(true,obj,dirname+"_small_angle","THgam[mmEx]",600,5,65,mmEx,500,80,150,(180/TMath::Pi())*thgam);
+                  hist(true,obj,dirname+"_small_angle","THgam[p_final]",1200,2480,2620,ejectile.Mag(),500,80,150,(180/TMath::Pi())*thgam);
+                }
+
 
                 if (Ecm_particle>=3400 && Ecm_particle<=3800) {
                   aberration_plots("_6LiEx_gate");
@@ -1253,12 +1514,63 @@ void MakeCoincidenceHistograms(TRuntimeObjects& obj, TCagra& cagra, TGrandRaiden
 void LoadCuts() {
   // Example of how to load a cut once.
   // statically define the cut in e441.h
-  // if(!your_fav_cut) {
+
+  // if(!he4_de) {
   //   TPreserveGDirectory Preserve;
-  //   TFile fcut("./cuts/newHe3cut.root");
-  //   your_fav_cut = (TCutG*)fcut.Get("_cut0");
-  //   std::cout << "Loaded he3 gate." << std::endl;
+  //   TFile fcut("./cuts/he4_de.root");
+  //   he4_de = (GCutG*)fcut.Get("he4_de");
+  //   assert(he4_de);
+  //   std::cout << "Loaded he4_de gate." << std::endl;
   // }
+  // if(!li6_de) {
+  //   TPreserveGDirectory Preserve;
+  //   TFile fcut("./cuts/li6_de.root");
+  //   li6_de = (GCutG*)fcut.Get("li6_de");
+  //   assert(li6_de);
+  //   std::cout << "Loaded li6_de gate." << std::endl;
+  // }
+  // if(!tdc_band_cut) {
+  //   TPreserveGDirectory Preserve;
+  //   TFile fcut("./cuts/tdc_band_cut.root");
+  //   tdc_band_cut = (GCutG*)fcut.Get("tdc_band");
+  //   assert(tdc_band_cut);
+  //   std::cout << "Loaded tdc_band_cut gate." << std::endl;
+  // }
+  // if(!tdc_lower_cut) {
+  //   TPreserveGDirectory Preserve;
+  //   TFile fcut("./cuts/tdc_lower_cut.root");
+  //   tdc_lower_cut = (GCutG*)fcut.Get("tdc_lower_cut");
+  //   assert(tdc_lower_cut);
+  //   std::cout << "Loaded tdc_lower_cut gate." << std::endl;
+  // }
+  // if(!tdc_under_cut) {
+  //   TPreserveGDirectory Preserve;
+  //   TFile fcut("./cuts/tdc_under_cut.root");
+  //   tdc_under_cut = (GCutG*)fcut.Get("tdc_under_cut");
+  //   assert(tdc_under_cut);
+  //   std::cout << "Loaded tdc_under_cut gate." << std::endl;
+  // }
+  // if(!tdc_peak_cut) {
+  //   TPreserveGDirectory Preserve;
+  //   TFile fcut("./cuts/tdc_peak_cut.root");
+  //   tdc_peak_cut = (GCutG*)fcut.Get("tdc_peak_cut");
+  //   assert(tdc_peak_cut);
+  //   std::cout << "Loaded tdc_peak_cut gate." << std::endl;
+  // }
+  if(!adc12_pid_reject_cut) {
+    TPreserveGDirectory Preserve;
+    TFile fcut("./cuts/adc12_pid_reject_cut.root");
+    adc12_pid_reject_cut = (GCutG*)fcut.Get("adc12_pid_reject_cut");
+    assert(adc12_pid_reject_cut);
+    std::cout << "Loaded adc12_pid_reject_cut gate." << std::endl;
+  }
+  if(!tdc1_reject_low_cut) {
+    TPreserveGDirectory Preserve;
+    TFile fcut("./cuts/tdc1_reject_low_cut.root");
+    tdc1_reject_low_cut = (GCutG*)fcut.Get("tdc1_reject_low_cut");
+    assert(tdc1_reject_low_cut);
+    std::cout << "Loaded tdc1_reject_low_cut gate." << std::endl;
+  }
 }
 
 void LoadRaytraceParams(size_t xdeg, size_t adeg, size_t ydeg, size_t bdeg) {

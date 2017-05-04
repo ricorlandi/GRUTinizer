@@ -40,6 +40,26 @@ def scatter_from_root_1d_hist(hist):
     return [bin_centers, bin_contents]
 
 
+def scatter_from_2d_hist(hist, unfilled_are_blank=True):
+    xbins = hist.GetXaxis().GetNbins()
+    ybins = hist.GetYaxis().GetNbins()
+
+    xbin_centers = np.array(all_bin_centers(hist.GetXaxis()))
+    ybin_centers = np.array(all_bin_centers(hist.GetYaxis()))
+
+
+    bin_contents = np.empty((xbins,ybins))
+    bin_contents[:] = np.nan
+
+    data_points = []
+    for i in range(xbins):
+        for j in range(ybins):
+            content = hist.GetBinContent(i+1, j+1)
+            if content > 0:
+                data_points.append((xbin_centers[i],ybin_centers[j],content))
+
+    return np.asarray(data_points)
+
 
 def plot_root_2d_hist(hist, unfilled_are_blank=True):
     xbins = hist.GetXaxis().GetNbins()
@@ -92,6 +112,10 @@ def gaus(x, *params):
     scale,mu,sigma = params
     return scale/np.sqrt(2*np.pi*sigma)*np.exp(-np.power(x-mu,2)/(2*np.power(sigma,2)))
 
+def gaus_linear(x, *params):
+    scale,mu,sigma,lin_m,lib_b = params
+    return scale/np.sqrt(2*np.pi*sigma)*np.exp(-np.power(x-mu,2)/(2*np.power(sigma,2))) + lin_m*x + lin_b
+
 
 
 class DefaultOrderedDict(OrderedDict):
@@ -139,3 +163,14 @@ class DefaultOrderedDict(OrderedDict):
 import random
 def random_name():
     return ''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for i in range(10))
+
+
+
+def explicit_GH1D_to_TH1D(gh1d_hist):
+    low_edges,contents = plot_root_1d_hist(gh1d_hist)
+    name = gh1d_hist.GetName()
+    th1d_hist = ROOT.TH1D(name,name,gh1d_hist.GetNbinsX(),gh1d_hist.GetXaxis().GetBinLowEdge(1),gh1d_hist.GetXaxis().GetBinLowEdge(gh1d_hist.GetNbinsX()+1))
+    for i,binval in enumerate(contents):
+        th1d_hist.SetBinContent(i,binval)
+    test_edges,test_contents = plot_root_1d_hist(th1d_hist)
+    return th1d_hist
