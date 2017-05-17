@@ -69,9 +69,13 @@ class TCagraHit : public TDetectorHit {
     Short_t GetPrevPostRiseBeginSample() { return prev_postrise_begin_sample; }
     Short_t GetPreRiseBeginSample() { return prerise_begin; }
     Short_t GetPreRiseEndSample() { return prerise_end; }
+    Short_t GetPostRiseBeginSample() { return postrise_begin; }
+    Short_t GetPostRiseEndSample() { return postrise_end; }
     void SetPrevPostRiseBeginSample(UShort_t val) { prev_postrise_begin_sample = val; }
     void SetPreRiseBeginSample(UShort_t val) { prerise_begin = val; }
     void SetPreRiseEndSample(UShort_t val) { prerise_end = val; }
+    void SetPostRiseBeginSample(UShort_t val) { postrise_begin = val; }
+    void SetPostRiseEndSample(UShort_t val) { postrise_end = val; }
 
     void SetFlags(UShort_t fl) { flags = fl; }
     const UShort_t& GetFlags() const { return flags; }
@@ -125,6 +129,8 @@ class TCagraHit : public TDetectorHit {
     Short_t prev_postrise_begin_sample;
     Short_t prerise_begin;
     Short_t prerise_end;
+    Short_t postrise_begin;
+    Short_t postrise_end;
     Double_t corrected_energy;
 
     Double_t fit_params[2]; //!
