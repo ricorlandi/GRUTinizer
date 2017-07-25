@@ -526,6 +526,10 @@ double ModifiedLeastSquaresChi2(double ni, double nui) {return TMath::Power(ni-n
 Double_t baseline_exp(Double_t x, const Double_t* par) {
   return par[0]*TMath::Exp(-x*par[1]);
 }
+// improved exp-function for baseline fit
+Double_t baseline_exp_updated(Double_t x, const Double_t* par, double decayTime) {
+  return par[0]+par[1]*TMath::Exp(-x/decayTime); // decay time has to be set properly for best energy resolution for each crystal separately. Reasonable starting value: 5000 (50 micro secs)
+}
 std::function<Double_t(const Double_t* params)> wrapper;
 Double_t BaselineFit(const Double_t* params) {
   return wrapper(params);
@@ -611,6 +615,213 @@ Double_t TCagraHit::GetBaselineExpCorrFast(int segnum) {
 
   return energy;
 }
+
+// updated baseline fit method for energy determination
+// using improved exp-function: baseline_exp_updated
+Double_t TCagraHit::GetEnergy_Fit(int segnum, double decayTime) {
+
+  const size_t size = 3;
+  Int_t time[size];
+  Double_t sample[size];
+
+  auto shaping_time = TANLEvent::GetShapingTime();
+
+  sample[0] = transform_trace_point(prev_postrise_begin_sample);
+  sample[1] = transform_trace_point(prerise_begin);
+  sample[2] = transform_trace_point(prerise_end);
+
+  // k_window is actually given by k + k0
+  Double_t tprev_postrise_enter = prev_time + GValue::Value("d_window")*100 + GValue::Value("k_window")*100 + GValue::Value("k0_window")*100;
+  Double_t tdiff = Timestamp() - prev_time;
+  time[0] = 0;
+  time[2] = Timestamp()
+    - GValue::Value("d2_window")*100 // d2_window is supposed to be fixed to 190ns, however, comparing traces and the samples in the header file it seems to be 200ns --> fix it in the config/constants.val to 0.2
+    - GValue::Value("d3_window")*100
+    - tprev_postrise_enter;
+  time[1] = time[2] - shaping_time;
+
+
+  wrapper = [&time,&sample,&decayTime](const Double_t* params) {
+    Double_t sum_chi2 = 0.0;
+    for (int i=0; i<size; i++) {
+      auto sample_fit = baseline_exp_updated(time[i],params,decayTime);
+      sum_chi2 += LeastSquaresChi2(sample[i],sample_fit);
+    }
+    return sum_chi2;
+  };
+
+  auto minuit = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
+  ROOT::Math::Functor kernel(&BaselineFit,2);
+  minuit->SetMaxFunctionCalls(1e6);
+  minuit->SetMaxIterations(1e5);
+  minuit->SetTolerance(0.0001);
+  minuit->SetFunction(kernel);
+  minuit->SetVariable(0,"par0",800.0,0.0001);
+  minuit->SetVariable(1,"par1",400.0,0.0001);
+  minuit->Minimize();
+  auto params = minuit->X();
+
+  if (std::isnan(params[0]) || std::isnan(params[1])) {
+    //std::cout << "nan in fit" << std::endl <<std::endl;;
+    return 0.0;
+  }
+
+
+  Double_t tpostrise_enter = Timestamp() + GValue::Value("d_window")*100 + GValue::Value("k_window")*100 + GValue::Value("k0_window")*100 - tprev_postrise_enter;
+  Double_t tpostrise_exit = tpostrise_enter+shaping_time;
+
+
+  Double_t sum_prerise_fit = 0.0;
+  Double_t sum_postrise_fit = 0.0;
+//  Double_t sum_base_fit = 0.0;
+
+  Double_t t1 = 0.0;
+  for (int j = 0; j < 350; j++) { // shaping_time = 350 samples = 3.5 micro secs
+          t1 = tpostrise_enter+j;
+          sum_postrise_fit += baseline_exp_updated(t1, params, decayTime);
+  }
+  sum_postrise_fit = inverse_transform_trace_point(sum_postrise_fit/shaping_time);
+
+  Double_t t2 = 0.0;
+  for (int j = 0; j < 350; j++) { // shaping_time = 350 samples = 3.5 micro secs
+          t2 = time[1]+j;
+          sum_prerise_fit += baseline_exp_updated(t2, params, decayTime);
+  }
+  sum_prerise_fit = inverse_transform_trace_point(sum_prerise_fit/shaping_time);
+
+
+//  Double_t t3 = 0.0;
+//  for (int j = 0; j < 350; j++) {
+//          t3 = 10*tpostrise_exit+j;
+//          sum_base_fit += baseline_exp_updated(t3, params, decayTime);
+//  }
+//  sum_base_fit = inverse_transform_trace_point(sum_base_fit/shaping_time);
+
+
+  auto postE = postrise_energy/shaping_time;
+  auto preE = prerise_energy/shaping_time;
+
+  auto energy = ((sum_postrise_fit - postE) - (sum_prerise_fit - preE));
+
+  TChannel* chan = TChannel::GetChannel(fAddress);
+  if(!chan){
+    static int count = 0;
+    if (count++ < 10) {
+      std::cout << std::hex << "Channel 0x" << fAddress << " not defined in calibrations file, no corrections are applied." << std::dec << std::endl;
+    } else if (count == 10) {
+      std::cout << "Supressing warning." <<std::endl;
+    }
+  } else {
+    energy = chan->CalEnergy(energy, fTimestamp);
+  }
+
+  return energy;
+
+}
+
+// updated baseline fit method for energy determination
+// using improved exp-function: baseline_exp_updated
+Double_t TCagraHit::GetCharge_Fit(int segnum, double decayTime) {
+
+  const size_t size = 3;
+  Int_t time[size];
+  Double_t sample[size];
+
+  auto shaping_time = TANLEvent::GetShapingTime();
+
+  sample[0] = transform_trace_point(prev_postrise_begin_sample);
+  sample[1] = transform_trace_point(prerise_begin);
+  sample[2] = transform_trace_point(prerise_end);
+
+  // k_window is actually given by k + k0
+  Double_t tprev_postrise_enter = prev_time + GValue::Value("d_window")*100 + GValue::Value("k_window")*100 + GValue::Value("k0_window")*100;
+  Double_t tdiff = Timestamp() - prev_time;
+  time[0] = 0;
+  time[2] = Timestamp()
+    - GValue::Value("d2_window")*100 // d2_window is supposed to be fixed to 190ns, however, comparing traces and the samples in the header file it seems to be 200ns --> fix it in the config/constants.val to 0.2
+    - GValue::Value("d3_window")*100
+    - tprev_postrise_enter;
+  time[1] = time[2] - shaping_time;
+
+
+  wrapper = [&time,&sample,&decayTime](const Double_t* params) {
+    Double_t sum_chi2 = 0.0;
+    for (int i=0; i<size; i++) {
+      auto sample_fit = baseline_exp_updated(time[i],params,decayTime);
+      sum_chi2 += LeastSquaresChi2(sample[i],sample_fit);
+    }
+    return sum_chi2;
+  };
+
+  auto minuit = ROOT::Math::Factory::CreateMinimizer("Minuit", "Migrad");
+  ROOT::Math::Functor kernel(&BaselineFit,2);
+  minuit->SetMaxFunctionCalls(1e6);
+  minuit->SetMaxIterations(1e5);
+  minuit->SetTolerance(0.0001);
+  minuit->SetFunction(kernel);
+  minuit->SetVariable(0,"par0",800.0,0.0001);
+  minuit->SetVariable(1,"par1",400.0,0.0001);
+  minuit->Minimize();
+  auto params = minuit->X();
+
+  if (std::isnan(params[0]) || std::isnan(params[1])) {
+    //std::cout << "nan in fit" << std::endl <<std::endl;;
+    return 0.0;
+  }
+
+
+  Double_t tpostrise_enter = Timestamp() + GValue::Value("d_window")*100 + GValue::Value("k_window")*100 + GValue::Value("k0_window")*100 - tprev_postrise_enter;
+  Double_t tpostrise_exit = tpostrise_enter+shaping_time;
+
+
+  Double_t sum_prerise_fit = 0.0;
+  Double_t sum_postrise_fit = 0.0;
+//  Double_t sum_base_fit = 0.0;
+
+  Double_t t1 = 0.0;
+  for (int j = 0; j < 350; j++) { // shaping_time = 350 samples = 3.5 micro secs
+          t1 = tpostrise_enter+j;
+          sum_postrise_fit += baseline_exp_updated(t1, params, decayTime);
+  }
+  sum_postrise_fit = inverse_transform_trace_point(sum_postrise_fit/shaping_time);
+
+  Double_t t2 = 0.0;
+  for (int j = 0; j < 350; j++) { // shaping_time = 350 samples = 3.5 micro secs
+          t2 = time[1]+j;
+          sum_prerise_fit += baseline_exp_updated(t2, params, decayTime);
+  }
+  sum_prerise_fit = inverse_transform_trace_point(sum_prerise_fit/shaping_time);
+
+
+//  Double_t t3 = 0.0;
+//  for (int j = 0; j < 350; j++) {
+//          t3 = 10*tpostrise_exit+j;
+//          sum_base_fit += baseline_exp_updated(t3, params, decayTime);
+//  }
+//  sum_base_fit = inverse_transform_trace_point(sum_base_fit/shaping_time);
+
+
+  auto postE = postrise_energy/shaping_time;
+  auto preE = prerise_energy/shaping_time;
+
+  auto charge = ((sum_postrise_fit - postE) - (sum_prerise_fit - preE));
+
+//  TChannel* chan = TChannel::GetChannel(fAddress);
+//  if(!chan){
+//    static int count = 0;
+//    if (count++ < 10) {
+//      std::cout << std::hex << "Channel 0x" << fAddress << " not defined in calibrations file, no corrections are applied." << std::dec << std::endl;
+//    } else if (count == 10) {
+//      std::cout << "Supressing warning." <<std::endl;
+//    }
+//  } else {
+//    energy = chan->CalEnergy(energy, fTimestamp);
+//  }
+
+  return charge;
+
+}
+
 
 void TCagraHit::DrawTraceBaseline(int segnum) {
   std::vector<Short_t>* trace = GetTrace(segnum);
